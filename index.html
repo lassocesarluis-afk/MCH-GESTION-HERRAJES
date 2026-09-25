@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo de Traslado y Conteo de Inventario</title>
+    <style>
+        /* Estilos generales en pantalla */
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .contenedor-recibo {
+            width: 216mm; /* Ancho Carta */
+            max-width: 100%;
+            background: #fff;
+            padding: 15mm;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        /* Encabezado */
+        .encabezado {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .titulo {
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .folio {
+            font-size: 14px;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        /* Secciones de Datos */
+        .grid-datos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .bloque {
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .bloque-titulo {
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            background: #eee;
+            padding: 3px 5px;
+            margin: -8px -8px 6px -8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .dato-linea {
+            margin-bottom: 4px;
+        }
+
+        /* Resumen de Conteo */
+        .resumen-conteo {
+            display: flex;
+            justify-content: space-between;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+
+        .item-resumen {
+            text-align: center;
+        }
+
+        .item-resumen .val {
+            font-size: 14px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .item-resumen .val.alerta {
+            color: #d32f2f;
+        }
+
+        /* Tabla de Productos */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        th, td {
+            border: 1px solid #aaa;
+            padding: 5px;
+            text-align: left;
+            font-size: 11px;
+        }
+
+        th {
+            background-color: #eee;
+            text-transform: uppercase;
+        }
+
+        .totales-fila {
+            font-weight: bold;
+            background-color: #fafafa;
+        }
+
+        /* Inputs interactivos dentro de la tabla */
+        table input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            padding: 3px 4px;
+            font-size: 11px;
+            border-radius: 3px;
+        }
+
+        table input[type="number"] {
+            text-align: center;
+        }
+
+        .col-dif {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Botones de Acción */
+        .panel-acciones {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .grupo-botones {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-agregar {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .btn-csv {
+            background: #17a2b8;
+            color: #fff;
+        }
+
+        .btn-eliminar {
+            background: #dc3545;
+            color: #fff;
+            padding: 2px 6px;
+            font-size: 10px;
+        }
+
+        .boton-imprimir {
+            background: #007bff;
+            color: #fff;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+
+        /* Sección de Firmas */
+        .firmas {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .firma-box {
+            width: 30%;
+            text-align: center;
+            border-top: 1px solid #333;
+            padding-top: 5px;
+            font-size: 11px;
+        }
+
+        /* =================================================== */
+        /* CONFIGURACIÓN DE IMPRESIÓN                          */
+        /* =================================================== */
+        @media print {
+            @page {
+                size: letter portrait;
+                margin: 10mm;
+            }
+
+            body {
+                background: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .contenedor-recibo {
+                border: none;
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            /* Ocultar elementos interactivos en impresión */
+            .panel-acciones,
+            .col-accion,
+            .btn-eliminar {
+                display: none !important;
+            }
+
+            /* Convertir inputs a apariencia de texto plano */
+            table input {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+            }
+
+            html, body {
+                height: 99%;
+                overflow: hidden;
+                page-break-after: avoid;
+                page-break-before: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor-recibo">
+        <!-- Acciones en Pantalla -->
+        <div class="panel-acciones">
+            <div class="grupo-botones">
+                <button class="btn btn-agregar" onclick="agregarFila()">+ Agregar Producto</button>
+                <button class="btn btn-csv" onclick="exportarCSV()">📥 Exportar a CSV</button>
+            </div>
+            <button class="btn boton-imprimir" onclick="window.print()">Imprimir Recibo</button>
+        </div>
+
+        <!-- Encabezado -->
+        <div class="encabezado">
+            <div>
+                <div class="titulo">Comprobante de Traslado y Conteo</div>
+                <small>Control de Inventario y Entrega de Mercancía</small>
+            </div>
+            <div class="folio">
+                N° RECIBO: <span id="folio-num">TR-00124</span><br>
+                <small style="color: #555; font-weight: normal;">Fecha: 25/09/2026</small>
+            </div>
+        </div>
+
+        <!-- Datos Origen y Destino -->
+        <div class="grid-datos">
+            <div class="bloque">
+                <div class="bloque-titulo">Origen</div>
+                <div class="dato-linea"><strong>Bodega:</strong> Principal (Norte)</div>
+                <div class="dato-linea"><strong>Despachado por:</strong> Juan Pérez</div>
+            </div>
+            <div class="bloque">
+                <div class="bloque-titulo">Destino</div>
+                <div class="dato-linea"><strong>Sucursal:</strong> Centro</div>
+                <div class="dato-linea"><strong>Recibido / Contado por:</strong> María Gómez</div>
+            </div>
+        </div>
+
+        <!-- Transporte -->
+        <div class="bloque" style="margin-bottom: 12px;">
+            <div class="bloque-titulo">Datos del Transportista / Vehículo</div>
+            <div style="display: flex; justify-content: space-between;">
+                <span><strong>Conductor:</strong> Carlos López</span>
+                <span><strong>Cédula/ID:</strong> 8-765-4321</span>
+                <span><strong>Placa Vehículo:</strong> AB1234</span>
+            </div>
+        </div>
+
+        <!-- Resumen Dinámico de Inventario -->
+        <div class="resumen-conteo">
+            <div class="item-resumen">
+                <div>Total SKUs</div>
+                <div class="val" id="resumen-skus">0</div>
+            </div>
+            <div class="item-resumen">
+                <div>Total Enviado</div>
+                <div class="val" id="resumen-enviado">0 Unid.</div>
+            </div>
+            <div class="item-resumen">
+                <div>Total Recibido</div>
+                <div class="val" id="resumen-recibido">0 Unid.</div>
+            </div>
+            <div class="item-resumen">
+                <div>Discrepancia</div>
+                <div class="val" id="resumen-diferencia">0 Unid.</div>
+            </div>
+        </div>
+
+        <!-- Tabla de Productos Modificable -->
+        <table id="tabla-productos">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">SKU / Código</th>
+                    <th>Descripción del Producto</th>
+                    <th style="width: 11%; text-align: center;">Cant. Env.</th>
+                    <th style="width: 11%; text-align: center;">Cant. Rec.</th>
+                    <th style="width: 10%; text-align: center;">Diferencia</th>
+                    <th style="width: 20%;">Estado / Obs.</th>
+                    <th class="col-accion" style="width: 5%; text-align: center;">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-tabla">
+                <!-- Se poblará por JS o por el usuario -->
+            </tbody>
+            <tfoot>
+                <tr class="totales-fila">
+                    <td colspan="2" style="text-align: right;">TOTALES:</td>
+                    <td style="text-align: center;" id="total-enviado">0</td>
+                    <td style="text-align: center;" id="total-recibido">0</td>
+                    <td style="text-align: center;" id="total-diferencia">0</td>
+                    <td colspan="2" id="estado-general">Conforme</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- Firmas -->
+        <div class="firmas">
+            <div class="firma-box">
+                <br><br>
+                Firma Entregado (Origen)
+            </div>
+            <div class="firma-box">
+                <br><br>
+                Firma Transportista
+            </div>
+            <div class="firma-box">
+                <br><br>
+                Firma Conteo y Recepción
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos iniciales de ejemplo
+        const productosIniciales = [
+            { sku: "PROD-001", desc: "Caja de Herramientas Industriales", env: 10, rec: 10, obs: "Buen estado" },
+            { sku: "PROD-002", desc: "Taladro Perf. 1/2 pulgada", env: 5, rec: 5, obs: "Buen estado" },
+            { sku: "PROD-003", desc: "Juego de Brocas multiusos", env: 20, rec: 20, obs: "Buen estado" }
+        ];
+
+        // Cargar ítems por defecto
+        window.onload = function() {
+            productosIniciales.forEach(item => agregarFila(item.sku, item.desc, item.env, item.rec, item.obs));
+            calcularTotales();
+        };
+
+        // Función para agregar una fila
+        function agregarFila(sku = "", desc = "", env = 0, rec = 0, obs = "Buen estado") {
+            const tbody = document.getElementById("cuerpo-tabla");
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td><input type="text" value="${sku}" placeholder="Código"></td>
+                <td><input type="text" value="${desc}" placeholder="Descripción"></td>
+                <td><input type="number" class="cant-env" value="${env}" min="0" oninput="calcularTotales()"></td>
+                <td><input type="number" class="cant-rec" value="${rec}" min="0" oninput="calcularTotales()"></td>
+                <td class="col-dif">0</td>
+                <td><input type="text" value="${obs}" placeholder="Observaciones"></td>
+                <td class="col-accion" style="text-align: center;">
+                    <button class="btn btn-eliminar" onclick="eliminarFila(this)">X</button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            calcularTotales();
+        }
+
+        // Función para eliminar una fila
+        function eliminarFila(btn) {
+            const fila = btn.closest("tr");
+            fila.remove();
+            calcularTotales();
+        }
+
+        // Recalcular dinámicamente los totales e inventario
+        function calcularTotales() {
+            const filas = document.querySelectorAll("#cuerpo-tabla tr");
+            let sumEnv = 0;
+            let sumRec = 0;
+            let sumDif = 0;
+
+            filas.forEach(fila => {
+                const envInput = fila.querySelector(".cant-env");
+                const recInput = fila.querySelector(".cant-rec");
+                const difCell = fila.querySelector(".col-dif");
+
+                const env = parseInt(envInput.value) || 0;
+                const rec = parseInt(recInput.value) || 0;
+                const dif = rec - env;
+
+                difCell.textContent = dif;
+                
+                // Color para diferencias
+                if (dif < 0) {
+                    difCell.style.color = "#d32f2f"; // Faltante
+                } else if (dif > 0) {
+                    difCell.style.color = "#28a745"; // Sobrante
+                } else {
+                    difCell.style.color = "#333";
+                }
+
+                sumEnv += env;
+                sumRec += rec;
+                sumDif += dif;
+            });
+
+            // Actualizar fila de totales en la tabla
+            document.getElementById("total-enviado").textContent = sumEnv;
+            document.getElementById("total-recibido").textContent = sumRec;
+            document.getElementById("total-diferencia").textContent = sumDif;
+
+            // Actualizar bloques del resumen superior
+            document.getElementById("resumen-skus").textContent = filas.length;
+            document.getElementById("resumen-enviado").textContent = `${sumEnv} Unid.`;
+            document.getElementById("resumen-recibido").textContent = `${sumRec} Unid.`;
+            
+            const resumenDif = document.getElementById("resumen-diferencia");
+            resumenDif.textContent = `${sumDif} Unid.`;
+
+            if (sumDif !== 0) {
+                resumenDif.classList.add("alerta");
+                document.getElementById("estado-general").textContent = "Con Discrepancia";
+            } else {
+                resumenDif.classList.remove("alerta");
+                document.getElementById("estado-general").textContent = "Conforme";
+            }
+        }
+
+        // Función para exportar el conteo a CSV
+        function exportarCSV() {
+            const filas = document.querySelectorAll("#cuerpo-tabla tr");
+            if (filas.length === 0) {
+                alert("No hay productos en la tabla para exportar.");
+                return;
+            }
+
+            const lineas = [];
+            // Encabezados de columna
+            lineas.push(["SKU / Codigo", "Descripcion", "Cantidad Enviada", "Cantidad Recibida", "Diferencia", "Estado / Observaciones"].map(campo => `"${campo}"`).join(","));
+
+            // Datos de cada producto
+            filas.forEach(fila => {
+                const inputs = fila.querySelectorAll("input");
+                const sku = inputs[0].value.replace(/"/g, '""');
+                const desc = inputs[1].value.replace(/"/g, '""');
+                const env = inputs[2].value || 0;
+                const rec = inputs[3].value || 0;
+                const dif = fila.querySelector(".col-dif").textContent || 0;
+                const obs = inputs[4].value.replace(/"/g, '""');
+
+                lineas.push([`"${sku}"`, `"${desc}"`, env, rec, dif, `"${obs}"`].join(","));
+            });
+
+            // Fila de totales al final
+            const totEnv = document.getElementById("total-enviado").textContent;
+            const totRec = document.getElementById("total-recibido").textContent;
+            const totDif = document.getElementById("total-diferencia").textContent;
+            const estGen = document.getElementById("estado-general").textContent;
+            lineas.push(["\"TOTALES\"", "\"\"", totEnv, totRec, totDif, `"${estGen}"`].join(","));
+
+            // Crear el archivo CSV Blob con codificación UTF-8 con BOM (para compatibilidad con Excel)
+            const contenidoCSV = "\uFEFF" + lineas.join("\n");
+            const blob = new Blob([contenidoCSV], { type: "text/csv;charset=utf-8;" });
+            
+            // Generar enlace de descarga
+            const enlace = document.createElement("a");
+            const folio = document.getElementById("folio-num").textContent.trim();
+            enlace.href = URL.createObjectURL(blob);
+            enlace.setAttribute("download", `Conteo_Inventario_${folio}.csv`);
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+        }
+    </script>
+</body>
+</html>
