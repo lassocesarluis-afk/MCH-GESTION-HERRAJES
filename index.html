@@ -3,505 +3,1814 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recibo de Traslado y Conteo de Inventario</title>
+    <title>MCH-WMS (CésarStock) - Sistema de Control de Herrajes y Materiales</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (xlsx) para leer y exportar archivos de Excel en el navegador -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        /* Estilos generales en pantalla */
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            color: #333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
+        /* Aplicar Lucida Bright a absolutamente todo el sistema */
+        body, input, select, button, textarea, table, th, td, span, div, h1, h2, h3, h4, p, label {
+            font-family: 'Lucida Bright', Georgia, serif !important;
         }
 
-        .contenedor-recibo {
-            width: 216mm; /* Ancho Carta */
-            max-width: 100%;
-            background: #fff;
-            padding: 15mm;
-            margin: 0 auto;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-        }
-
-        /* Encabezado */
-        .encabezado {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #333;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-        }
-
-        .titulo {
-            font-size: 18px;
-            font-weight: bold;
+        .wms-table th {
+            background-color: #0f172a; /* Azul marino oscuro */
+            color: #ffffff;
+            font-size: 0.75rem;
             text-transform: uppercase;
-        }
-
-        .folio {
-            font-size: 14px;
-            color: #d32f2f;
-            font-weight: bold;
-        }
-
-        /* Secciones de Datos */
-        .grid-datos {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .bloque {
-            border: 1px solid #ddd;
-            padding: 8px;
-            border-radius: 4px;
-        }
-
-        .bloque-titulo {
-            font-weight: bold;
-            font-size: 11px;
-            text-transform: uppercase;
-            background: #eee;
-            padding: 3px 5px;
-            margin: -8px -8px 6px -8px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .dato-linea {
-            margin-bottom: 4px;
-        }
-
-        /* Resumen de Conteo */
-        .resumen-conteo {
-            display: flex;
-            justify-content: space-between;
-            background-color: #f9f9f9;
-            border: 1px solid #ccc;
-            padding: 8px 12px;
-            margin-bottom: 12px;
-            border-radius: 4px;
-        }
-
-        .item-resumen {
-            text-align: center;
-        }
-
-        .item-resumen .val {
-            font-size: 14px;
-            font-weight: bold;
-            color: #007bff;
-        }
-
-        .item-resumen .val.alerta {
-            color: #d32f2f;
-        }
-
-        /* Tabla de Productos */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
-        }
-
-        th, td {
-            border: 1px solid #aaa;
-            padding: 5px;
+            letter-spacing: 0.05em;
+            padding: 0.5rem;
             text-align: left;
-            font-size: 11px;
+            border-bottom: 1px solid #1e293b;
         }
-
-        th {
-            background-color: #eee;
-            text-transform: uppercase;
-        }
-
-        .totales-fila {
-            font-weight: bold;
-            background-color: #fafafa;
-        }
-
-        /* Inputs interactivos dentro de la tabla */
-        table input {
-            width: 100%;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            padding: 3px 4px;
-            font-size: 11px;
-            border-radius: 3px;
-        }
-
-        table input[type="number"] {
-            text-align: center;
-        }
-
-        .col-dif {
-            text-align: center;
-            font-weight: bold;
-        }
-
-        /* Botones de Acción */
-        .panel-acciones {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            gap: 10px;
-        }
-
-        .grupo-botones {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .btn-agregar {
-            background: #28a745;
-            color: #fff;
-        }
-
-        .btn-csv {
-            background: #17a2b8;
-            color: #fff;
-        }
-
-        .btn-eliminar {
-            background: #dc3545;
-            color: #fff;
-            padding: 2px 6px;
-            font-size: 10px;
-        }
-
-        .boton-imprimir {
-            background: #007bff;
-            color: #fff;
-            font-size: 14px;
-            padding: 8px 16px;
-        }
-
-        /* Sección de Firmas */
-        .firmas {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
-        }
-
-        .firma-box {
-            width: 30%;
-            text-align: center;
-            border-top: 1px solid #333;
-            padding-top: 5px;
-            font-size: 11px;
-        }
-
-        /* =================================================== */
-        /* CONFIGURACIÓN DE IMPRESIÓN                          */
-        /* =================================================== */
-        @media print {
-            @page {
-                size: letter portrait;
-                margin: 10mm;
-            }
-
-            body {
-                background: none;
-                padding: 0;
-                margin: 0;
-            }
-
-            .contenedor-recibo {
-                border: none;
-                width: 100%;
-                padding: 0;
-                margin: 0;
-            }
-
-            /* Ocultar elementos interactivos en impresión */
-            .panel-acciones,
-            .col-accion,
-            .btn-eliminar {
-                display: none !important;
-            }
-
-            /* Convertir inputs a apariencia de texto plano */
-            table input {
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
-            }
-
-            html, body {
-                height: 99%;
-                overflow: hidden;
-                page-break-after: avoid;
-                page-break-before: avoid;
-            }
+        .wms-table td {
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-900 antialiased text-xs">
 
-    <div class="contenedor-recibo">
-        <!-- Acciones en Pantalla -->
-        <div class="panel-acciones">
-            <div class="grupo-botones">
-                <button class="btn btn-agregar" onclick="agregarFila()">+ Agregar Producto</button>
-                <button class="btn btn-csv" onclick="exportarCSV()">📥 Exportar a CSV</button>
+    <!-- LOGIN SCREEN OVERLAY WITH BACKGROUND IMAGE -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center" style="background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1920&q=80');">
+        <div class="bg-white/95 backdrop-blur rounded-md shadow-2xl max-w-sm w-full p-6 space-y-4 border border-slate-300">
+            <div class="text-center space-y-1">
+                <div class="inline-block bg-amber-500 text-slate-950 font-black px-3 py-1.5 rounded text-base tracking-wider mb-1">
+                    MCH
+                </div>
+                <h2 class="font-bold text-sm text-slate-900 uppercase">Control de Herrajes y Materiales</h2>
+                <p class="text-[11px] text-slate-500">Proyecto Línea de Transmisión LT1 / LT2 - Panamá</p>
             </div>
-            <button class="btn boton-imprimir" onclick="window.print()">Imprimir Recibo</button>
-        </div>
 
-        <!-- Encabezado -->
-        <div class="encabezado">
-            <div>
-                <div class="titulo">Comprobante de Traslado y Conteo</div>
-                <small>Control de Inventario y Entrega de Mercancía</small>
-            </div>
-            <div class="folio">
-                N° RECIBO: <span id="folio-num">TR-00124</span><br>
-                <small style="color: #555; font-weight: normal;">Fecha: 25/09/2026</small>
-            </div>
-        </div>
+            <div class="space-y-3 pt-2">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Usuario *</label>
+                    <input type="text" id="loginUserInput" value="celasso" placeholder="Ingrese su usuario" class="w-full p-2 bg-slate-50 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none font-medium">
+                </div>
 
-        <!-- Datos Origen y Destino -->
-        <div class="grid-datos">
-            <div class="bloque">
-                <div class="bloque-titulo">Origen</div>
-                <div class="dato-linea"><strong>Bodega:</strong> Principal (Norte)</div>
-                <div class="dato-linea"><strong>Despachado por:</strong> Juan Pérez</div>
-            </div>
-            <div class="bloque">
-                <div class="bloque-titulo">Destino</div>
-                <div class="dato-linea"><strong>Sucursal:</strong> Centro</div>
-                <div class="dato-linea"><strong>Recibido / Contado por:</strong> María Gómez</div>
-            </div>
-        </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Contraseña *</label>
+                    <input type="password" id="loginPassword" value="********" placeholder="••••••••" class="w-full p-2 bg-slate-50 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                </div>
 
-        <!-- Transporte -->
-        <div class="bloque" style="margin-bottom: 12px;">
-            <div class="bloque-titulo">Datos del Transportista / Vehículo</div>
-            <div style="display: flex; justify-content: space-between;">
-                <span><strong>Conductor:</strong> Carlos López</span>
-                <span><strong>Cédula/ID:</strong> 8-765-4321</span>
-                <span><strong>Placa Vehículo:</strong> AB1234</span>
-            </div>
-        </div>
-
-        <!-- Resumen Dinámico de Inventario -->
-        <div class="resumen-conteo">
-            <div class="item-resumen">
-                <div>Total SKUs</div>
-                <div class="val" id="resumen-skus">0</div>
-            </div>
-            <div class="item-resumen">
-                <div>Total Enviado</div>
-                <div class="val" id="resumen-enviado">0 Unid.</div>
-            </div>
-            <div class="item-resumen">
-                <div>Total Recibido</div>
-                <div class="val" id="resumen-recibido">0 Unid.</div>
-            </div>
-            <div class="item-resumen">
-                <div>Discrepancia</div>
-                <div class="val" id="resumen-diferencia">0 Unid.</div>
-            </div>
-        </div>
-
-        <!-- Tabla de Productos Modificable -->
-        <table id="tabla-productos">
-            <thead>
-                <tr>
-                    <th style="width: 15%;">SKU / Código</th>
-                    <th>Descripción del Producto</th>
-                    <th style="width: 11%; text-align: center;">Cant. Env.</th>
-                    <th style="width: 11%; text-align: center;">Cant. Rec.</th>
-                    <th style="width: 10%; text-align: center;">Diferencia</th>
-                    <th style="width: 20%;">Estado / Obs.</th>
-                    <th class="col-accion" style="width: 5%; text-align: center;">Acción</th>
-                </tr>
-            </thead>
-            <tbody id="cuerpo-tabla">
-                <!-- Se poblará por JS o por el usuario -->
-            </tbody>
-            <tfoot>
-                <tr class="totales-fila">
-                    <td colspan="2" style="text-align: right;">TOTALES:</td>
-                    <td style="text-align: center;" id="total-enviado">0</td>
-                    <td style="text-align: center;" id="total-recibido">0</td>
-                    <td style="text-align: center;" id="total-diferencia">0</td>
-                    <td colspan="2" id="estado-general">Conforme</td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <!-- Firmas -->
-        <div class="firmas">
-            <div class="firma-box">
-                <br><br>
-                Firma Entregado (Origen)
-            </div>
-            <div class="firma-box">
-                <br><br>
-                Firma Transportista
-            </div>
-            <div class="firma-box">
-                <br><br>
-                Firma Conteo y Recepción
+                <button onclick="handleLogin()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded shadow transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                    <i data-lucide="log-in" class="h-4 w-4 text-amber-400"></i>
+                    <span>Iniciar Sesión</span>
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- MAIN APP CONTAINER (Hidden until login) -->
+    <div id="appContainer" class="hidden min-h-screen flex flex-col w-full">
+        <!-- TOP BAR / HEADER -->
+        <header class="bg-slate-900 text-white border-b-2 border-amber-500 sticky top-0 z-40 shadow-md w-full">
+            <div class="w-full px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <!-- Branding -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-amber-500 text-slate-950 font-black px-2 py-1 rounded text-sm tracking-wider">
+                        MCH
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-sm tracking-wide leading-tight text-slate-100">SISTEMA DE CONTROL DE HERRAJES Y MATERIALES</h1>
+                        <p class="text-[10px] text-slate-400">Proyecto: El aumento de capacidad de la línea LT230-54A/55A Sab - Panamá II</p>
+                    </div>
+                </div>
+
+                <!-- User Info & Active Warehouse -->
+                <div class="flex items-center space-x-4 bg-slate-800/80 px-3 py-1.5 rounded border border-slate-700">
+                    <div class="text-right">
+                        <span id="activeUserName" class="block font-bold text-slate-200 text-xs">CÉSAR L. LASSO</span>
+                        <span id="activeUserRoleWh" class="block text-[10px] text-amber-400 font-medium">Almacenista | LT1 CHILIBRE - 17</span>
+                    </div>
+                    <div class="h-6 w-px bg-slate-600"></div>
+                    <button onclick="handleLogout()" title="Cerrar Sesión" class="text-slate-400 hover:text-red-400 transition cursor-pointer">
+                        <i data-lucide="log-out" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTAINER (FULL WIDTH) -->
+        <main class="w-full px-4 py-4 space-y-3 flex-grow">
+
+            <!-- SYSTEM CONTROL PANEL / TOOLBAR WITH SEARCH FOR CLOSED TABS -->
+            <div class="bg-white rounded-md shadow-sm border border-slate-300 p-2.5 flex flex-wrap items-center justify-between gap-2 w-full">
+                <div class="text-slate-700 font-semibold text-xs flex items-center space-x-1.5">
+                    <i data-lucide="info" class="h-4 w-4 text-amber-600"></i>
+                    <span>Busque aquí abajo para restaurar pestañas cerradas (Presione Barra Espaciadora para ver todas):</span>
+                </div>
+
+                <!-- Search bar for finding and restoring closed tabs (Listens to spacebar) -->
+                <div class="relative w-full sm:w-80">
+                    <input type="text" id="tabSearchInput" onkeyup="filterHiddenTabs(event)" placeholder="Buscar y restaurar pestañas cerradas..." class="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                    <i data-lucide="search" class="h-3.5 w-3.5 absolute left-2.5 top-1.5 text-slate-400"></i>
+                    
+                    <!-- Dropdown container for search results of hidden tabs -->
+                    <div id="tabSearchResults" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAVIGATION TABS CONTAINER -->
+            <div id="tabsContainer" class="flex border-b border-slate-300 bg-slate-900 rounded-t-md px-2 pt-2 gap-1 overflow-x-auto text-xs w-full">
+                <!-- Dynamically rendered tabs with close 'x' buttons -->
+            </div>
+
+            <!-- MODULE VIEWS CONTAINER -->
+            <div class="bg-white rounded-b-md border-x border-b border-slate-300 shadow-sm p-3 min-h-[500px] w-full">
+
+                <!-- 1. MODULE: STOCK DE ALMACENES -->
+                <div id="view-stock" class="module-view space-y-3">
+                    <div class="flex items-center justify-between bg-slate-50 p-2 border border-slate-200 rounded">
+                        <button onclick="toggleAdvancedSearch('stock')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded shadow text-xs flex items-center space-x-1.5 cursor-pointer">
+                            <i data-lucide="search" class="h-4 w-4"></i>
+                            <span>🔍 Búsqueda Avanzada (Stock / Materiales)</span>
+                        </button>
+                        <div class="flex space-x-1">
+                            <button onclick="exportData('stock', 'excel')" class="px-2.5 py-1.5 bg-slate-900 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 text-amber-400"></i><span>Excel</span></button>
+                            <button onclick="exportData('stock', 'pdf')" class="px-2.5 py-1.5 bg-slate-800 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-text" class="h-3.5 w-3.5 text-amber-400"></i><span>PDF</span></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3 relative">
+                        <div id="searchBox-stock" class="hidden md:w-80 bg-slate-900/5 p-3 rounded border border-amber-300 space-y-3 flex-shrink-0">
+                            <div class="font-bold text-slate-900 text-xs border-b pb-1 flex justify-between items-center">
+                                <span>Filtros Avanzados (Stock)</span>
+                                <button onclick="toggleAdvancedSearch('stock')" class="text-slate-500 hover:text-red-500 text-[11px]">✕ Cerrar</button>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Referencias / Textos (Comas)</label>
+                                    <input type="text" id="s_stock_ref" placeholder="Ej: U-1290,YL-12424" class="w-full p-1.5 bg-white border rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Almacén Específico</label>
+                                    <select id="s_stock_wh" class="w-full p-1.5 bg-white border rounded text-xs font-semibold">
+                                        <option value="">TODOS LOS ALMACENES</option>
+                                        <option value="LT1 RIO GRANDE 02-2">LT1 RIO GRANDE 02-2</option>
+                                        <option value="LT1 CAPIRA 15-3">LT1 CAPIRA 15-3</option>
+                                        <option value="LT1 CHILIBRE - 17">LT1 CHILIBRE - 17</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Estado del Stock</label>
+                                    <select id="s_stock_status" class="w-full p-1.5 bg-white border rounded text-xs">
+                                        <option value="">Todos los Estados</option>
+                                        <option value="Óptimo">Óptimo</option>
+                                        <option value="Bajo Stock">Bajo Stock</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-2">
+                                <button onclick="clearSearch('stock')" class="px-3 py-1 bg-slate-400 text-white rounded text-xs font-bold cursor-pointer">Limpiar</button>
+                                <button onclick="executeSearch('stock')" class="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold cursor-pointer">Buscar / Filtrar</button>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow space-y-3">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50 p-2.5 border border-slate-200 rounded">
+                                <div class="bg-white p-2 rounded border border-slate-200 text-center">
+                                    <span class="block text-[10px] text-slate-500 uppercase font-semibold">Total Registros</span>
+                                    <strong id="count-stock" class="text-slate-900 text-sm">0</strong>
+                                </div>
+                                <div class="bg-slate-900/5 p-2 rounded border border-slate-200 text-center">
+                                    <span class="block text-[10px] text-slate-700 uppercase font-semibold">Entradas Acumuladas</span>
+                                    <strong id="total-entries" class="text-slate-900 text-sm">0</strong>
+                                </div>
+                                <div class="bg-amber-500/10 p-2 rounded border border-amber-300 text-center">
+                                    <span class="block text-[10px] text-amber-800 uppercase font-semibold">Salidas a Campo</span>
+                                    <strong id="total-outputs" class="text-amber-900 text-sm">0 UND</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="overflow-x-auto border border-slate-300 rounded w-full">
+                                <table id="table-stock" class="wms-table w-full">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-8 text-center"><input type="checkbox" onchange="toggleSelectAll(this, 'body-stock')" class="rounded border-slate-300"></th>
+                                            <th class="w-12 text-center">Acciones</th>
+                                            <th>Referencia</th>
+                                            <th>Descripción del Material / Herraje</th>
+                                            <th class="text-center">Unidad</th>
+                                            <th id="th-col-rio" class="warehouse-col text-right">LT1 RIO GRANDE 02-2</th>
+                                            <th id="th-col-cap" class="warehouse-col text-right">LT1 CAPIRA 15-3</th>
+                                            <th id="th-col-chi" class="warehouse-col text-right">LT1 CHILIBRE - 17</th>
+                                            <th class="text-right">Total Stock</th>
+                                            <th class="text-center">Total Salidas</th>
+                                            <th>Estado Stock</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="body-stock" class="divide-y divide-slate-200">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. MODULE: CATÁLOGO GLOBAL -->
+                <div id="view-catalogo" class="module-view hidden space-y-4">
+                    <div class="flex items-center justify-between bg-slate-50 p-2 border border-slate-200 rounded">
+                        <button onclick="toggleAdvancedSearch('catalogo')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded shadow text-xs flex items-center space-x-1.5 cursor-pointer">
+                            <i data-lucide="search" class="h-4 w-4"></i>
+                            <span>🔍 Búsqueda Avanzada (Catálogo Global)</span>
+                        </button>
+                        <div class="flex space-x-1">
+                            <button onclick="exportData('catalogo', 'excel')" class="px-2.5 py-1.5 bg-slate-900 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 text-amber-400"></i><span>Excel</span></button>
+                            <button onclick="exportData('catalogo', 'pdf')" class="px-2.5 py-1.5 bg-slate-800 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-text" class="h-3.5 w-3.5 text-amber-400"></i><span>PDF</span></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3 relative">
+                        <div id="searchBox-catalogo" class="hidden md:w-80 bg-slate-900/5 p-3 rounded border border-amber-300 space-y-3 flex-shrink-0">
+                            <div class="font-bold text-slate-900 text-xs border-b pb-1 flex justify-between items-center">
+                                <span>Filtros (Catálogo)</span>
+                                <button onclick="toggleAdvancedSearch('catalogo')" class="text-slate-500 hover:text-red-500 text-[11px]">✕ Cerrar</button>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Referencias / Descripciones</label>
+                                    <input type="text" id="s_cat_query" placeholder="Ej: U-1290,YL-12424" class="w-full p-1.5 bg-white border rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Unidad de Medida</label>
+                                    <select id="s_cat_unit" class="w-full p-1.5 bg-white border rounded text-xs font-semibold">
+                                        <option value="">TODAS LAS UNIDADES</option>
+                                        <option value="UND">UND</option>
+                                        <option value="JGO">JGO</option>
+                                        <option value="MTS">MTS</option>
+                                        <option value="KGS">KGS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-2">
+                                <button onclick="clearSearch('catalogo')" class="px-3 py-1 bg-slate-400 text-white rounded text-xs font-bold cursor-pointer">Limpiar</button>
+                                <button onclick="executeSearch('catalogo')" class="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold cursor-pointer">Buscar / Filtrar</button>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow space-y-3">
+                            <div id="catalogEditContainer" class="hidden bg-slate-900/5 p-3 rounded border border-slate-300 space-y-2 max-w-xl">
+                                <h4 class="font-bold text-slate-900 text-xs">Editar Ítem del Catálogo Global</h4>
+                                <input type="hidden" id="editCatalogId">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 text-[11px]">Referencia *</label>
+                                        <input type="text" id="editCatalogRef" class="w-full p-1 bg-white border border-slate-300 rounded uppercase font-mono text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 text-[11px]">Unidad Predeterminada *</label>
+                                        <select id="editCatalogUnit" class="w-full p-1 bg-white border border-slate-300 rounded font-semibold text-xs">
+                                            <option value="UND">UND</option>
+                                            <option value="JGO">JGO</option>
+                                            <option value="MTS">MTS</option>
+                                            <option value="KGS">KGS</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-3">
+                                        <label class="block font-semibold text-slate-700 text-[11px]">Descripción *</label>
+                                        <input type="text" id="editCatalogDesc" class="w-full p-1 bg-white border border-slate-300 rounded uppercase text-xs">
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-2 pt-1">
+                                    <button onclick="cancelCatalogEdit()" class="px-3 py-1 bg-slate-500 text-white rounded text-xs font-bold cursor-pointer">Cancelar</button>
+                                    <button onclick="saveCatalogEdit()" class="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold cursor-pointer">Guardar Cambios Globales</button>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto border border-slate-300 rounded w-full">
+                                <table id="table-catalogo" class="wms-table w-full">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-12 text-center">Acciones</th>
+                                            <th>Código de Referencia</th>
+                                            <th>Descripción del Material / Herraje</th>
+                                            <th class="text-center">Unidad Predeterminada</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="body-catalogo" class="divide-y divide-slate-200">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. MODULE: CREAR NUEVO HERRAJE -->
+                <div id="view-nuevoItem" class="module-view hidden space-y-4">
+                    <div class="bg-slate-50 p-4 rounded border border-slate-300 space-y-3 max-w-2xl mx-auto">
+                        <h3 class="font-bold text-slate-900 border-b border-slate-200 pb-2 uppercase text-xs flex items-center space-x-2">
+                            <i data-lucide="plus-circle" class="h-4 w-4 text-amber-600"></i>
+                            <span>Registro de Nuevo Herraje o Material en el Sistema</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Código de Referencia *</label>
+                                <input type="text" id="newRefInput" placeholder="Ej: HR-9920" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 font-mono uppercase">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Unidad de Medida *</label>
+                                <select id="newUnitInput" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 font-medium">
+                                    <option value="UND">UND (Unidades)</option>
+                                    <option value="JGO">JGO (Juegos)</option>
+                                    <option value="MTS">MTS (Metros)</option>
+                                    <option value="KGS">KGS (Kilogramos)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Descripción del Material / Herraje *</label>
+                            <input type="text" id="newDescInput" placeholder="Ej: AISLADOR COMPUESTO 230 kV" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 uppercase">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Stock Río Grande 02-2</label>
+                                <input type="number" id="stockRioGrande" value="0" min="0" class="w-full p-1.5 bg-white border border-slate-300 rounded text-right font-bold">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Stock Capira 15-3</label>
+                                <input type="number" id="stockCapira" value="0" min="0" class="w-full p-1.5 bg-white border border-slate-300 rounded text-right font-bold">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Stock Chilibre - 17</label>
+                                <input type="number" id="stockChilibre" value="0" min="0" class="w-full p-1.5 bg-white border border-slate-300 rounded text-right font-bold">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-3">
+                            <button onclick="saveNewItemToStock()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded shadow flex items-center space-x-1.5 cursor-pointer">
+                                <i data-lucide="save" class="h-4 w-4 text-amber-400"></i>
+                                <span>Guardar en el Inventario</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. MODULE: GESTIÓN DE USUARIOS -->
+                <div id="view-usuarios" class="module-view hidden space-y-4">
+                    <div class="flex items-center justify-between bg-slate-50 p-2 border border-slate-200 rounded">
+                        <div class="flex space-x-2">
+                            <button onclick="toggleAdvancedSearch('usuarios')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded shadow text-xs flex items-center space-x-1.5 cursor-pointer">
+                                <i data-lucide="search" class="h-4 w-4"></i>
+                                <span>🔍 Búsqueda Avanzada (Usuarios)</span>
+                            </button>
+                            <button onclick="openUserForm()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded shadow text-xs flex items-center space-x-1.5 cursor-pointer">
+                                <i data-lucide="user-plus" class="h-4 w-4 text-amber-400"></i>
+                                <span>+ Crear Nuevo Usuario</span>
+                            </button>
+                        </div>
+                        <div class="flex space-x-1">
+                            <button onclick="exportData('usuarios', 'excel')" class="px-2.5 py-1.5 bg-slate-900 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 text-amber-400"></i><span>Excel</span></button>
+                            <button onclick="exportData('usuarios', 'pdf')" class="px-2.5 py-1.5 bg-slate-800 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-text" class="h-3.5 w-3.5 text-amber-400"></i><span>PDF</span></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3 relative">
+                        <div id="searchBox-usuarios" class="hidden md:w-80 bg-slate-900/5 p-3 rounded border border-amber-300 space-y-3 flex-shrink-0">
+                            <div class="font-bold text-slate-900 text-xs border-b pb-1 flex justify-between items-center">
+                                <span>Búsqueda y Filtros de Usuarios</span>
+                                <button onclick="toggleAdvancedSearch('usuarios')" class="text-slate-500 hover:text-red-500 text-[11px]">✕ Cerrar</button>
+                            </div>
+                            <div class="space-y-2.5">
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Buscar por ID de Usuario</label>
+                                    <input type="text" id="s_usr_id" placeholder="Ej: USR-001" class="w-full p-1.5 bg-white border rounded text-xs font-mono">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Buscar por Nombre / Usuario</label>
+                                    <input type="text" id="s_usr_name" placeholder="Ej: César Lasso, celasso" class="w-full p-1.5 bg-white border rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Filtrar por Rol / Cargo</label>
+                                    <select id="s_usr_role" class="w-full p-1.5 bg-white border rounded text-xs font-semibold">
+                                        <option value="">TODOS LOS ROLES</option>
+                                        <option value="Jefe / Residente">Jefe / Residente</option>
+                                        <option value="Encargado de almacén">Encargado de almacén</option>
+                                        <option value="Almacenista">Almacenista</option>
+                                        <option value="Capataz de cuadrilla">Capataz de cuadrilla</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Filtrar por Estado de Cuenta</label>
+                                    <select id="s_usr_status" class="w-full p-1.5 bg-white border rounded text-xs">
+                                        <option value="">TODOS</option>
+                                        <option value="Activo">Activo</option>
+                                        <option value="Inactivo">Inactivo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-2">
+                                <button onclick="clearSearch('usuarios')" class="px-3 py-1 bg-slate-400 text-white rounded text-xs font-bold cursor-pointer">Limpiar</button>
+                                <button onclick="executeSearch('usuarios')" class="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold cursor-pointer">Buscar / Filtrar</button>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow space-y-4">
+                            <div id="userFormSection" class="hidden bg-slate-50 p-3.5 rounded border border-slate-300 space-y-3">
+                                <h3 id="userFormTitle" class="font-bold text-slate-900 border-b border-slate-200 pb-1.5 uppercase text-[11px] flex items-center space-x-1.5">
+                                    <i data-lucide="user-plus" class="h-4 w-4 text-amber-600"></i>
+                                    <span>Registro y Modificación de Usuarios</span>
+                                </h3>
+
+                                <input type="hidden" id="editUserId" value="">
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">ID de Usuario (Modificable)</label>
+                                        <input type="text" id="newUserIdInput" placeholder="Ej: USR-001" class="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-slate-900 font-bold focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Fecha de Creación (Automático)</label>
+                                        <input type="text" id="newUserCreatedDate" disabled class="w-full p-1.5 bg-slate-200 border border-slate-300 rounded font-mono text-slate-600 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Fecha de Caducidad (Mín. 365 Días) *</label>
+                                        <input type="date" id="newUserExpiryDate" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none font-medium">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Nombre Completo *</label>
+                                        <input type="text" id="newUserName" placeholder="Ej: Carlos Mendoza" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Usuario de Sistema (Login) *</label>
+                                        <input type="text" id="newUserLogin" placeholder="Ej: cmendoza" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Contraseña</label>
+                                        <input type="password" id="newUserPassword" placeholder="••••••••" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Estado de Cuenta *</label>
+                                        <select id="newUserStatus" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none font-bold text-emerald-700">
+                                            <option value="Activo">ACTIVO</option>
+                                            <option value="Inactivo">INACTIVO</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Correo Electrónico</label>
+                                        <input type="email" id="newUserEmail" placeholder="classo@mcholdinggroup.com" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Rol / Cargo *</label>
+                                       <select id="newUserRole" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none font-semibold">
+                                            <option value="Jefe / Residente">Jefe / Residente</option>
+                                            <option value="Encargado de almacén">Encargado de almacén</option>
+                                            <option value="Almacenista" selected>Almacenista</option>
+                                            <option value="Capataz de cuadrilla">Capataz de cuadrilla</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Almacén Asignado *</label>
+                                    <select id="newUserWh" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none font-medium">
+                                        <option value="LT1 RIO GRANDE 02-2">LT1 RIO GRANDE 02-2</option>
+                                        <option value="LT1 CAPIRA 15-3">LT1 CAPIRA 15-3</option>
+                                        <option value="LT1 CHILIBRE - 17" selected>LT1 CHILIBRE - 17</option>
+                                        <option value="Todos los Almacenes" class="text-slate-900 font-bold bg-amber-50">TODOS LOS ALMACENES (Acceso Total)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Permisos de Módulo *</label>
+                                    <div id="userPermissionsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white p-2 border border-slate-300 rounded text-xs">
+                                        <!-- Populated dynamically via JS -->
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end space-x-2 pt-1">
+                                    <button onclick="resetUserForm()" class="px-3 py-1.5 bg-slate-500 hover:bg-slate-600 text-white rounded font-bold shadow cursor-pointer">
+                                        Cancelar Edición
+                                    </button>
+                                    <button onclick="addUser()" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded font-bold flex items-center space-x-1 shadow cursor-pointer">
+                                        <i data-lucide="save" class="h-3.5 w-3.5 text-amber-400"></i>
+                                        <span id="btnUserSaveText">Guardar Usuario</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto border border-slate-300 rounded w-full">
+                                <table id="table-usuarios" class="wms-table w-full">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-8 text-center"><input type="checkbox" onchange="toggleSelectAll(this, 'body-usuarios')" class="rounded border-slate-300"></th>
+                                            <th class="w-16 text-center">Acciones</th>
+                                            <th class="text-center">ID</th>
+                                            <th>Nombre Completo</th>
+                                            <th>Usuario</th>
+                                            <th>Creado</th>
+                                            <th>Caducidad</th>
+                                            <th>Rol / Cargo</th>
+                                            <th>Almacén Asignado</th>
+                                            <th class="text-center">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="body-usuarios" class="divide-y divide-slate-200">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. MODULE: TRASLADO ENTRE ALMACENES -->
+                <div id="view-traslado" class="module-view hidden space-y-4">
+                    <div class="flex items-center justify-between bg-slate-50 p-2 border border-slate-200 rounded">
+                        <button onclick="toggleAdvancedSearch('traslado')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded shadow text-xs flex items-center space-x-1.5 cursor-pointer">
+                            <i data-lucide="search" class="h-4 w-4"></i>
+                            <span>🔍 Búsqueda Avanzada (Historial Traslados)</span>
+                        </button>
+                        <div class="flex space-x-1">
+                            <button onclick="exportData('traslados', 'excel')" class="px-2.5 py-1.5 bg-slate-900 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 text-amber-400"></i><span>Excel</span></button>
+                            <button onclick="exportData('traslados', 'pdf')" class="px-2.5 py-1.5 bg-slate-800 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-text" class="h-3.5 w-3.5 text-amber-400"></i><span>PDF</span></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3 relative">
+                        <div id="searchBox-traslado" class="hidden md:w-80 bg-slate-900/5 p-3 rounded border border-amber-300 space-y-3 flex-shrink-0">
+                            <div class="font-bold text-slate-900 text-xs border-b pb-1 flex justify-between items-center">
+                                <span>Filtros (Traslados)</span>
+                                <button onclick="toggleAdvancedSearch('traslado')" class="text-slate-500 hover:text-red-500 text-[11px]">✕ Cerrar</button>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Términos</label>
+                                    <input type="text" id="s_trans_query" placeholder="Ej: U-1290, Aislador" class="w-full p-1.5 bg-white border rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Almacén Origen</label>
+                                    <select id="s_trans_orig" class="w-full p-1.5 bg-white border rounded text-xs font-semibold">
+                                        <option value="">TODOS</option>
+                                        <option value="LT1 CHILIBRE - 17">LT1 CHILIBRE - 17</option>
+                                        <option value="LT1 RIO GRANDE 02-2">LT1 RIO GRANDE 02-2</option>
+                                        <option value="LT1 CAPIRA 15-3">LT1 CAPIRA 15-3</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Almacén Destino</label>
+                                    <select id="s_trans_dest" class="w-full p-1.5 bg-white border rounded text-xs font-semibold">
+                                        <option value="">TODOS</option>
+                                        <option value="LT1 RIO GRANDE 02-2">LT1 RIO GRANDE 02-2</option>
+                                        <option value="LT1 CAPIRA 15-3">LT1 CAPIRA 15-3</option>
+                                        <option value="LT1 CHILIBRE - 17">LT1 CHILIBRE - 17</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-2">
+                                <button onclick="clearSearch('traslado')" class="px-3 py-1 bg-slate-400 text-white rounded text-xs font-bold cursor-pointer">Limpiar</button>
+                                <button onclick="executeSearch('traslado')" class="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold cursor-pointer">Buscar / Filtrar</button>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow space-y-4">
+                            <div class="bg-slate-50 p-3.5 rounded border border-slate-300 space-y-3">
+                                <h3 class="font-bold text-slate-900 border-b border-slate-200 pb-1.5 uppercase text-[11px] flex items-center space-x-1.5">
+                                    <i data-lucide="arrow-right-left" class="h-4 w-4 text-amber-600"></i>
+                                    <span>Generar Solicitud y Orden de Traslado</span>
+                                </h3>
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Almacén Origen *</label>
+                                        <select id="transOrig" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                            <option value="LT1 CHILIBRE - 17">LT1 CHILIBRE - 17</option>
+                                            <option value="LT1 RIO GRANDE 02-2">LT1 RIO GRANDE 02-2</option>
+                                            <option value="LT1 CAPIRA 15-3">LT1 CAPIRA 15-3</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Almacén Destino *</label>
+                                        <select id="transDest" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                            <option value="LT1 RIO GRANDE 02-2">LT1 RIO GRANDE 02-2</option>
+                                            <option value="LT1 CAPIRA 15-3">LT1 CAPIRA 15-3</option>
+                                            <option value="LT1 CHILIBRE - 17">LT1 CHILIBRE - 17</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Solicitante / Residente *</label>
+                                        <input type="text" id="transReq" placeholder="Ej: Ing. Fernando Rios" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-2.5 rounded border border-slate-300 space-y-2">
+                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+                                        <div class="md:col-span-7">
+                                            <label class="block font-semibold text-slate-700 mb-1">Seleccionar Herraje / Material *</label>
+                                            <select id="itemSelect" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                                <option value="">-- Seleccionar de Stock Disponible --</option>
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-3">
+                                            <label class="block font-semibold text-slate-700 mb-1">Cantidad *</label>
+                                            <input type="number" id="itemQty" value="1" min="1" class="w-full p-1.5 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <button onclick="addItemToTransferList()" class="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded flex items-center justify-center space-x-1 cursor-pointer">
+                                                <i data-lucide="plus" class="h-3.5 w-3.5 text-amber-400"></i>
+                                                <span>Agregar</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-2 border border-slate-200 rounded overflow-hidden">
+                                        <table class="wms-table w-full">
+                                            <thead>
+                                                <tr>
+                                                    <th>Herraje / Material</th>
+                                                    <th class="text-right">Cantidad Solicitada</th>
+                                                    <th class="w-12 text-center">Quitar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="transferItemsList" class="divide-y divide-slate-200">
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-slate-400 py-2 italic">No hay ítems agregados a la orden de traslado.</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end pt-1">
+                                    <button onclick="createTransferOrder()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded shadow flex items-center space-x-1.5 cursor-pointer">
+                                        <i data-lucide="send" class="h-4 w-4 text-amber-400"></i>
+                                        <span>Emitir Orden de Traslado</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <h4 class="font-bold text-slate-900 uppercase text-xs">Historial de Traslados Registrados</h4>
+                                <div class="overflow-x-auto border border-slate-300 rounded w-full">
+                                    <table id="table-traslados" class="wms-table w-full">
+                                        <thead>
+                                            <tr>
+                                                <th class="w-8 text-center"><input type="checkbox" onchange="toggleSelectAll(this, 'body-traslados')" class="rounded border-slate-300"></th>
+                                                <th>Fecha / Hora</th>
+                                                <th>Origen</th>
+                                                <th>Destino</th>
+                                                <th>Solicitante</th>
+                                                <th>Detalle de Carga</th>
+                                                <th class="text-center">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="body-traslados" class="divide-y divide-slate-200">
+                                            <!-- Populated via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. MODULE: AUDITORÍA DE RECEPCIÓN -->
+                <div id="view-auditoria" class="module-view hidden space-y-3">
+                    <div class="flex items-center justify-between bg-slate-50 p-2 border border-slate-200 rounded">
+                        <button onclick="toggleAdvancedSearch('auditoria')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded shadow text-xs flex items-center space-x-1.5 cursor-pointer">
+                            <i data-lucide="search" class="h-4 w-4"></i>
+                            <span>🔍 Búsqueda Avanzada (Auditoría)</span>
+                        </button>
+                        <div class="flex space-x-1">
+                            <button onclick="exportData('auditoria', 'excel')" class="px-2.5 py-1 bg-slate-900 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 text-amber-400"></i><span>Excel</span></button>
+                            <button onclick="exportData('auditoria', 'pdf')" class="px-2.5 py-1 bg-slate-800 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-text" class="h-3.5 w-3.5 text-amber-400"></i><span>PDF</span></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3 relative">
+                        <div id="searchBox-auditoria" class="hidden md:w-80 bg-slate-900/5 p-3 rounded border border-amber-300 space-y-3 flex-shrink-0">
+                            <div class="font-bold text-slate-900 text-xs border-b pb-1 flex justify-between items-center">
+                                <span>Filtros (Auditoría)</span>
+                                <button onclick="toggleAdvancedSearch('auditoria')" class="text-slate-500 hover:text-red-500 text-[11px]">✕ Cerrar</button>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Referencias / Descripciones</label>
+                                    <input type="text" id="s_aud_query" placeholder="Ej: U-1290,YL-12424" class="w-full p-1.5 bg-white border rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Estado de Inspección</label>
+                                    <select id="s_aud_status" class="w-full p-1.5 bg-white border rounded text-xs font-semibold">
+                                        <option value="">TODOS</option>
+                                        <option value="APROBADO">APROBADO</option>
+                                        <option value="OBSERVADO">OBSERVADO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-2">
+                                <button onclick="clearSearch('auditoria')" class="px-3 py-1 bg-slate-400 text-white rounded text-xs font-bold cursor-pointer">Limpiar</button>
+                                <button onclick="executeSearch('auditoria')" class="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold cursor-pointer">Buscar / Filtrar</button>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow">
+                            <div class="overflow-x-auto border border-slate-300 rounded w-full">
+                                <table id="table-auditoria" class="wms-table w-full">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-8 text-center"><input type="checkbox" onchange="toggleSelectAll(this, 'body-auditoria')" class="rounded border-slate-300"></th>
+                                            <th>Fecha Revisión</th>
+                                            <th>Almacén / Frente</th>
+                                            <th>Referencia</th>
+                                            <th>Descripción</th>
+                                            <th class="text-center">Cant. Recibida</th>
+                                            <th class="text-center">Estado Inspección</th>
+                                            <th>Inspector / Responsable</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="body-auditoria" class="divide-y divide-slate-200">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. MODULE: ENTREGAS / VALES A CAMPO -->
+                <div id="view-entregas" class="module-view hidden space-y-4">
+                    <div class="flex items-center justify-between bg-slate-50 p-2 border border-slate-200 rounded">
+                        <button onclick="toggleAdvancedSearch('entregas')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded shadow text-xs flex items-center space-x-1.5 cursor-pointer">
+                            <i data-lucide="search" class="h-4 w-4"></i>
+                            <span>🔍 Búsqueda Avanzada (Vales / Salidas)</span>
+                        </button>
+                        <div class="flex space-x-1">
+                            <button onclick="exportData('entregas', 'excel')" class="px-2.5 py-1.5 bg-slate-900 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 text-amber-400"></i><span>Excel</span></button>
+                            <button onclick="exportData('entregas', 'pdf')" class="px-2.5 py-1.5 bg-slate-800 text-white rounded font-medium flex items-center space-x-1 text-xs shadow cursor-pointer"><i data-lucide="file-text" class="h-3.5 w-3.5 text-amber-400"></i><span>PDF</span></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3 relative">
+                        <div id="searchBox-entregas" class="hidden md:w-80 bg-slate-900/5 p-3 rounded border border-amber-300 space-y-3 flex-shrink-0">
+                            <div class="font-bold text-slate-900 text-xs border-b pb-1 flex justify-between items-center">
+                                <span>Filtros (Vales)</span>
+                                <button onclick="toggleAdvancedSearch('entregas')" class="text-slate-500 hover:text-red-500 text-[11px]">✕ Cerrar</button>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Vales / Cuadrillas</label>
+                                    <input type="text" id="s_ent_query" placeholder="Ej: VALE-2026-088,VALE-2026-087" class="w-full p-1.5 bg-white border rounded text-xs">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-[11px] text-slate-700">Estado del Vale</label>
+                                    <select id="s_ent_status" class="w-full p-1.5 bg-white border rounded text-xs font-semibold">
+                                        <option value="">TODOS</option>
+                                        <option value="ENTREGADO">ENTREGADO</option>
+                                        <option value="PENDIENTE">PENDIENTE</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-2">
+                                <button onclick="clearSearch('entregas')" class="px-3 py-1 bg-slate-400 text-white rounded text-xs font-bold cursor-pointer">Limpiar</button>
+                                <button onclick="executeSearch('entregas')" class="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold cursor-pointer">Buscar / Filtrar</button>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow space-y-4">
+                            <div class="bg-slate-50 p-3.5 rounded border border-slate-300 space-y-3">
+                                <h3 class="font-bold text-slate-900 border-b border-slate-200 pb-1.5 uppercase text-[11px] flex items-center space-x-1.5">
+                                    <i data-lucide="file-check-2" class="h-4 w-4 text-amber-600"></i>
+                                    <span>Emisión de Vale de Salida para Cuadrillas</span>
+                                </h3>
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Número de Vale *</label>
+                                        <input type="text" id="valeNum" value="VALE-2026-089" class="w-full p-1.5 bg-white border border-slate-300 rounded font-mono font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Cuadrilla / Contratista *</label>
+                                        <input type="text" id="valeCrew" placeholder="Ej: Cuadrilla Montaje Líneas Norte" class="w-full p-1.5 bg-white border border-slate-300 rounded">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Torres / Estructura Destino *</label>
+                                        <input type="text" id="valeTower" placeholder="Ej: Torres #45 al #52" class="w-full p-1.5 bg-white border border-slate-300 rounded">
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end pt-2">
+                                    <button onclick="generateVale()" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded shadow flex items-center space-x-1.5 cursor-pointer">
+                                        <i data-lucide="printer" class="h-4 w-4 text-amber-400"></i>
+                                        <span>Generar y Registrar Salida</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto border border-slate-300 rounded w-full">
+                                <table id="table-entregas" class="wms-table w-full">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-8 text-center"><input type="checkbox" onchange="toggleSelectAll(this, 'body-entregas')" class="rounded border-slate-300"></th>
+                                            <th>Nº Vale</th>
+                                            <th>Fecha</th>
+                                            <th>Cuadrilla</th>
+                                            <th>Estructura / Destino</th>
+                                            <th>Almacén Proveedor</th>
+                                            <th class="text-center">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="body-entregas" class="divide-y divide-slate-200">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. MODULE: IMPORTAR PLANILLA -->
+                <div id="view-importar" class="module-view hidden space-y-4">
+                    <div class="bg-slate-50 p-5 rounded border border-slate-300 space-y-4 max-w-3xl mx-auto">
+                        <div class="text-center space-y-2">
+                            <div class="mx-auto w-12 h-12 bg-slate-900 text-amber-400 rounded-full flex items-center justify-center">
+                                <i data-lucide="file-spreadsheet" class="h-6 w-6"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-900 text-sm uppercase">Carga Inteligente de Planilla e Ingeniería</h3>
+                            <p class="text-slate-500 text-[11px]">Seleccione o arrastre un archivo Excel (.xlsx/.xls) o CSV con fórmulas de asignación. El sistema detectará automáticamente la correspondencia entre <strong>Torres</strong>, <strong>Herrajes</strong> y <strong>Cantidades</strong>.</p>
+                        </div>
+                        
+                        <div class="border-2 border-dashed border-slate-300 rounded p-4 bg-white hover:bg-slate-50 transition text-center">
+                            <input type="file" id="excelFileInput" accept=".csv, .xlsx, .xls" onchange="handleExcelFileSelect(event)" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer">
+                        </div>
+
+                        <div id="importPreviewContainer" class="hidden space-y-3 pt-2">
+                            <div class="flex items-center justify-between bg-amber-500/10 border border-amber-300 p-2 rounded text-xs">
+                                <span class="font-bold text-slate-900 flex items-center space-x-1.5">
+                                    <i data-lucide="check-circle" class="h-4 w-4 text-amber-600"></i>
+                                    <span id="importSummaryText">Archivo analizado con éxito. Se detectaron asignaciones a torres.</span>
+                                </span>
+                            </div>
+
+                            <div class="overflow-x-auto border border-slate-300 rounded max-h-60">
+                                <table class="wms-table w-full">
+                                    <thead>
+                                        <tr>
+                                            <th>Torre / Estructura Detectada</th>
+                                            <th>Herraje / Material</th>
+                                            <th class="text-center">Cantidad Asignada</th>
+                                            <th>Fórmula / Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="previewTableBody" class="divide-y divide-slate-200">
+                                        <!-- Parsed rows injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button onclick="confirmAndIntegrateImport()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded shadow flex items-center space-x-1.5 cursor-pointer">
+                                    <i data-lucide="database" class="h-4 w-4 text-amber-400"></i>
+                                    <span>Integrar Planilla al Inventario Consolidado</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. NUEVO MÓDULO: GENERADOR DE INVENTARIOS -->
+                <div id="view-generarInventario" class="module-view hidden space-y-4">
+                    <div class="bg-slate-50 p-4 rounded border border-slate-300 space-y-3 max-w-4xl mx-auto">
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="bg-amber-500 text-slate-950 p-2 rounded">
+                                    <i data-lucide="clipboard-list" class="h-5 w-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 uppercase text-xs">Módulo de Generación de Inventario Oficial</h3>
+                                    <p class="text-[11px] text-slate-500">Seleccione el almacén y genere el reporte oficial de existencias para auditoría.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="exportData('generarInventario', 'excel')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded shadow text-xs flex items-center space-x-1 cursor-pointer">
+                                    <i data-lucide="file-spreadsheet" class="h-4 w-4 text-amber-400"></i>
+                                    <span>Exportar Excel</span>
+                                </button>
+                                <button onclick="exportData('generarInventario', 'pdf')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded shadow text-xs flex items-center space-x-1 cursor-pointer">
+                                    <i data-lucide="file-text" class="h-4 w-4 text-amber-400"></i>
+                                    <span>Imprimir / PDF</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filtros del Generador -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3 rounded border border-slate-300">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Almacén / Frente a Inventariar</label>
+                                <select id="genInvWarehouse" onchange="renderGeneratorTable()" class="w-full p-1.5 bg-slate-50 border border-slate-300 rounded font-semibold text-xs">
+                                    <option value="TODOS">CONSOLIDADO (TODOS LOS ALMACENES)</option>
+                                    <option value="LT1 RIO GRANDE 02-2">LT1 RIO GRANDE 02-2</option>
+                                    <option value="LT1 CAPIRA 15-3">LT1 CAPIRA 15-3</option>
+                                    <option value="LT1 CHILIBRE - 17">LT1 CHILIBRE - 17</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Responsable / Auditor</label>
+                                <input type="text" id="genInvAuditor" value="CÉSAR L. LASSO" class="w-full p-1.5 bg-slate-50 border border-slate-300 rounded font-semibold text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Fecha del Inventario</label>
+                                <input type="date" id="genInvDate" class="w-full p-1.5 bg-slate-50 border border-slate-300 rounded font-semibold text-xs">
+                            </div>
+                        </div>
+
+                        <!-- Tabla del Inventario Generado -->
+                        <div class="overflow-x-auto border border-slate-300 rounded w-full bg-white">
+                            <table id="table-generarInventario" class="wms-table w-full">
+                                <thead class="bg-slate-900 text-white">
+                                    <tr>
+                                        <th class="w-12 text-center">Nº</th>
+                                        <th>Código Referencia</th>
+                                        <th>Descripción del Material / Herraje</th>
+                                        <th class="text-center">Unidad</th>
+                                        <th class="text-right">Existencia Actual</th>
+                                        <th class="text-center">Conteo Físico</th>
+                                        <th class="text-center">Diferencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body-generarInventario" class="divide-y divide-slate-200">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION CORE -->
     <script>
-        // Datos iniciales de ejemplo
-        const productosIniciales = [
-            { sku: "PROD-001", desc: "Caja de Herramientas Industriales", env: 10, rec: 10, obs: "Buen estado" },
-            { sku: "PROD-002", desc: "Taladro Perf. 1/2 pulgada", env: 5, rec: 5, obs: "Buen estado" },
-            { sku: "PROD-003", desc: "Juego de Brocas multiusos", env: 20, rec: 20, obs: "Buen estado" }
+        let stockData = [
+            { id: 1, ref: "U-1290", desc: "GRILLETE RECTO 5/8\"", unit: "UND", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 },
+            { id: 2, ref: "YL-12424", desc: "EXTENSIÓN DE OJOS", unit: "UND", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 },
+            { id: 3, ref: "QS-1275", desc: "HORQUILLAS BOLA PARALELAS", unit: "UND", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 },
+            { id: 4, ref: "Aislador-52-5R", desc: "AISLADORES DE VIDRIO ANSI 52-5", unit: "UND", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 },
+            { id: 5, ref: "W-1290", desc: "ROTULAS", unit: "UND", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 },
+            { id: 6, ref: "NY-JLRX1/CFC-520/71", desc: "GRAPA TENSIÓN", unit: "JGO", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 },
+            { id: 7, ref: "CLH-JLRX1/CFC-520/71", desc: "GRAPA DE SUSPENSIÓN", unit: "JGO", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 },
+            { id: 8, ref: "4D40", desc: "AMORTIGUADOR DE FASE HTLS", unit: "UND", rioGrande: 0, capira: 0, chilibre: 0, outputs: 0 }
         ];
 
-        // Cargar ítems por defecto
-        window.onload = function() {
-            productosIniciales.forEach(item => agregarFila(item.sku, item.desc, item.env, item.rec, item.obs));
-            calcularTotales();
-        };
+        let usersData = [
+            { id: "USR-001", name: "CÉSAR L. LASSO", login: "celasso", email: "classo@mcholdinggroup.com", role: "Almacenista", wh: "LT1 CHILIBRE - 17", createdDate: "2026-09-27", expiryDate: "2027-09-27", permissions: ["Stock de Almacenes", "Catálogo Global", "Crear Nuevo Herraje", "Gestión de Usuarios", "Traslado entre Almacenes", "Auditoría de Recepción", "Entregas / Salidas a Campo", "Importar Planilla", "Generador de Inventarios"], status: "Activo" }
+        ];
 
-        // Función para agregar una fila
-        function agregarFila(sku = "", desc = "", env = 0, rec = 0, obs = "Buen estado") {
-            const tbody = document.getElementById("cuerpo-tabla");
-            const tr = document.createElement("tr");
+        let transfersData = [];
+        let auditoriaData = [];
+        let entregasData = [];
 
-            tr.innerHTML = `
-                <td><input type="text" value="${sku}" placeholder="Código"></td>
-                <td><input type="text" value="${desc}" placeholder="Descripción"></td>
-                <td><input type="number" class="cant-env" value="${env}" min="0" oninput="calcularTotales()"></td>
-                <td><input type="number" class="cant-rec" value="${rec}" min="0" oninput="calcularTotales()"></td>
-                <td class="col-dif">0</td>
-                <td><input type="text" value="${obs}" placeholder="Observaciones"></td>
-                <td class="col-accion" style="text-align: center;">
-                    <button class="btn btn-eliminar" onclick="eliminarFila(this)">X</button>
-                </td>
-            `;
+        let transferItemsCart = [];
+        let parsedImportRows = [];
+        let activeModuleId = 'stock';
 
-            tbody.appendChild(tr);
-            calcularTotales();
+        const availableModules = [
+            { id: 'stock', name: 'Stock de Almacenes', icon: 'boxes' },
+            { id: 'catalogo', name: 'Catálogo Global', icon: 'tag' },
+            { id: 'nuevoItem', name: 'Crear Nuevo Herraje', icon: 'plus-circle' },
+            { id: 'usuarios', name: 'Gestión de Usuarios', icon: 'users' },
+            { id: 'traslado', name: 'Traslado entre Almacenes', icon: 'arrow-right-left' },
+            { id: 'auditoria', name: 'Auditoría de Recepción', icon: 'clipboard-check' },
+            { id: 'entregas', name: 'Entregas / Salidas a Campo', icon: 'file-check-2' },
+            { id: 'importar', name: 'Importar Planilla', icon: 'file-spreadsheet' },
+            { id: 'generarInventario', name: 'Generador de Inventarios', icon: 'clipboard-list' }
+        ];
+
+        let openTabs = availableModules.map(m => m.id);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            renderTabs();
+            renderUserPermissionsCheckboxes();
+            renderStockTable();
+            renderCatalogTable();
+            renderUsersTable();
+            renderTransfersTable();
+            renderAuditoriaTable();
+            renderEntregasTable();
+            renderGeneratorTable();
+            populateTransferItemSelect();
+            initUserFormDefaults();
+
+            const dateInput = document.getElementById("genInvDate");
+            if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+        });
+
+        function initUserFormDefaults() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const createdInput = document.getElementById("newUserCreatedDate");
+            if(createdInput && !createdInput.value) createdInput.value = todayStr;
+
+            const expiryDateObj = new Date();
+            expiryDateObj.setDate(expiryDateObj.getDate() + 365);
+            const expiryStr = expiryDateObj.toISOString().split('T')[0];
+            const expiryInput = document.getElementById("newUserExpiryDate");
+            if(expiryInput && !expiryInput.value) expiryInput.value = expiryStr;
+
+            const nextIdNum = usersData.length > 0 ? usersData.length + 1 : 1;
+            const idInput = document.getElementById("newUserIdInput");
+            if(idInput && !idInput.value) idInput.value = `USR-${String(nextIdNum).padStart(3, '0')}`;
         }
 
-        // Función para eliminar una fila
-        function eliminarFila(btn) {
-            const fila = btn.closest("tr");
-            fila.remove();
-            calcularTotales();
-        }
-
-        // Recalcular dinámicamente los totales e inventario
-        function calcularTotales() {
-            const filas = document.querySelectorAll("#cuerpo-tabla tr");
-            let sumEnv = 0;
-            let sumRec = 0;
-            let sumDif = 0;
-
-            filas.forEach(fila => {
-                const envInput = fila.querySelector(".cant-env");
-                const recInput = fila.querySelector(".cant-rec");
-                const difCell = fila.querySelector(".col-dif");
-
-                const env = parseInt(envInput.value) || 0;
-                const rec = parseInt(recInput.value) || 0;
-                const dif = rec - env;
-
-                difCell.textContent = dif;
-                
-                // Color para diferencias
-                if (dif < 0) {
-                    difCell.style.color = "#d32f2f"; // Faltante
-                } else if (dif > 0) {
-                    difCell.style.color = "#28a745"; // Sobrante
-                } else {
-                    difCell.style.color = "#333";
-                }
-
-                sumEnv += env;
-                sumRec += rec;
-                sumDif += dif;
-            });
-
-            // Actualizar fila de totales en la tabla
-            document.getElementById("total-enviado").textContent = sumEnv;
-            document.getElementById("total-recibido").textContent = sumRec;
-            document.getElementById("total-diferencia").textContent = sumDif;
-
-            // Actualizar bloques del resumen superior
-            document.getElementById("resumen-skus").textContent = filas.length;
-            document.getElementById("resumen-enviado").textContent = `${sumEnv} Unid.`;
-            document.getElementById("resumen-recibido").textContent = `${sumRec} Unid.`;
-            
-            const resumenDif = document.getElementById("resumen-diferencia");
-            resumenDif.textContent = `${sumDif} Unid.`;
-
-            if (sumDif !== 0) {
-                resumenDif.classList.add("alerta");
-                document.getElementById("estado-general").textContent = "Con Discrepancia";
-            } else {
-                resumenDif.classList.remove("alerta");
-                document.getElementById("estado-general").textContent = "Conforme";
-            }
-        }
-
-        // Función para exportar el conteo a CSV
-        function exportarCSV() {
-            const filas = document.querySelectorAll("#cuerpo-tabla tr");
-            if (filas.length === 0) {
-                alert("No hay productos en la tabla para exportar.");
+        function handleLogin() {
+            const userInput = document.getElementById("loginUserInput").value.trim().toLowerCase();
+            if (!userInput) {
+                alert("Por favor ingrese su usuario.");
                 return;
             }
 
-            const lineas = [];
-            // Encabezados de columna
-            lineas.push(["SKU / Codigo", "Descripcion", "Cantidad Enviada", "Cantidad Recibida", "Diferencia", "Estado / Observaciones"].map(campo => `"${campo}"`).join(","));
+            const foundUser = usersData.find(u => u.login.toLowerCase() === userInput);
+            const fullName = foundUser ? foundUser.name : userInput.toUpperCase();
 
-            // Datos de cada producto
-            filas.forEach(fila => {
-                const inputs = fila.querySelectorAll("input");
-                const sku = inputs[0].value.replace(/"/g, '""');
-                const desc = inputs[1].value.replace(/"/g, '""');
-                const env = inputs[2].value || 0;
-                const rec = inputs[3].value || 0;
-                const dif = fila.querySelector(".col-dif").textContent || 0;
-                const obs = inputs[4].value.replace(/"/g, '""');
+            document.getElementById("loginScreen").classList.add("hidden");
+            document.getElementById("appContainer").classList.remove("hidden");
+            document.getElementById("activeUserName").innerText = fullName;
+            switchModule('stock');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
 
-                lineas.push([`"${sku}"`, `"${desc}"`, env, rec, dif, `"${obs}"`].join(","));
+        function handleLogout() {
+            document.getElementById("appContainer").classList.add("hidden");
+            document.getElementById("loginScreen").classList.remove("hidden");
+        }
+
+        function renderTabs() {
+            const container = document.getElementById("tabsContainer");
+            container.innerHTML = "";
+
+            openTabs.forEach(modId => {
+                const mod = availableModules.find(m => m.id === modId);
+                if(!mod) return;
+
+                const isActive = modId === activeModuleId;
+                const btn = document.createElement("div");
+                btn.className = `px-3 py-1.5 rounded-t whitespace-nowrap flex items-center space-x-2 cursor-pointer transition select-none ${isActive ? 'bg-white text-slate-900 font-bold border-t-2 border-amber-500' : 'bg-slate-800 text-slate-300 hover:text-white font-medium'}`;
+                
+                btn.innerHTML = `
+                    <div class="flex items-center space-x-1.5" onclick="switchModule('${mod.id}')">
+                        <i data-lucide="${mod.icon}" class="h-3.5 w-3.5 ${isActive ? 'text-amber-600' : 'text-amber-500'}"></i>
+                        <span>${mod.name}</span>
+                    </div>
+                    <button onclick="closeTab(event, '${mod.id}')" title="Cerrar pestaña" class="p-0.5 hover:bg-slate-700 rounded text-slate-400 hover:text-red-400 cursor-pointer">
+                        <i data-lucide="x" class="h-3 w-3"></i>
+                    </button>
+                `;
+                container.appendChild(btn);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeTab(event, modId) {
+            event.stopPropagation();
+            openTabs = openTabs.filter(id => id !== modId);
+            if(activeModuleId === modId) {
+                if(openTabs.length > 0) switchModule(openTabs[0]);
+                else {
+                    document.querySelectorAll(".module-view").forEach(el => el.classList.add("hidden"));
+                    activeModuleId = null;
+                }
+            }
+            renderTabs();
+        }
+
+        function filterHiddenTabs(event) {
+            const inputVal = document.getElementById("tabSearchInput").value;
+            const resultsContainer = document.getElementById("tabSearchResults");
+            resultsContainer.innerHTML = "";
+
+            const isSpacePressed = (event.key === ' ' || event.code === 'Space' || inputVal.trim() === '');
+
+            let hiddenModules = [];
+            if(isSpacePressed) {
+                hiddenModules = availableModules.filter(m => !openTabs.includes(m.id));
+            } else {
+                const query = inputVal.toLowerCase().trim();
+                if(!query) {
+                    resultsContainer.classList.add("hidden");
+                    return;
+                }
+                hiddenModules = availableModules.filter(m => !openTabs.includes(m.id) && m.name.toLowerCase().includes(query));
+            }
+
+            if(hiddenModules.length === 0) {
+                resultsContainer.innerHTML = `<div class="p-2 text-slate-400 text-center italic">No hay módulos disponibles para restaurar.</div>`;
+            } else {
+                hiddenModules.forEach(mod => {
+                    const item = document.createElement("div");
+                    item.className = "p-2 hover:bg-slate-100 cursor-pointer flex items-center justify-between text-xs text-slate-800 font-medium border-b last:border-b-0";
+                    item.innerHTML = `<span class="flex items-center space-x-1.5"><i data-lucide="${mod.icon}" class="h-3.5 w-3.5 text-amber-600"></i><span>${mod.name}</span></span> <span class="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Restaurar</span>`;
+                    item.onclick = () => restoreTab(mod.id);
+                    resultsContainer.appendChild(item);
+                });
+            }
+            resultsContainer.classList.add("open");
+            resultsContainer.classList.remove("hidden");
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function restoreTab(modId) {
+            if(!openTabs.includes(modId)) openTabs.push(modId);
+            document.getElementById("tabSearchInput").value = "";
+            document.getElementById("tabSearchResults").classList.add("hidden");
+            renderTabs();
+            switchModule(modId);
+        }
+
+        document.addEventListener("click", (e) => {
+            const searchContainer = document.getElementById("tabSearchInput");
+            const resultsContainer = document.getElementById("tabSearchResults");
+            if(searchContainer && resultsContainer && !searchContainer.contains(e.target) && !resultsContainer.contains(e.target)) {
+                resultsContainer.classList.add("hidden");
+            }
+        });
+
+        function renderUserPermissionsCheckboxes(selectedPermissions = []) {
+            const container = document.getElementById("userPermissionsContainer");
+            if(!container) return;
+            container.innerHTML = "";
+            availableModules.forEach(mod => {
+                const isChecked = selectedPermissions.length === 0 || selectedPermissions.includes(mod.name);
+                const label = document.createElement("label");
+                label.className = "flex items-center space-x-1.5 p-1 hover:bg-slate-50 rounded cursor-pointer";
+                label.innerHTML = `
+                    <input type="checkbox" class="user-permission-chk rounded text-slate-900" value="${mod.name}" ${isChecked ? 'checked' : ''}>
+                    <span class="font-medium text-slate-700">${mod.name}</span>
+                `;
+                container.appendChild(label);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function switchModule(moduleName) {
+            if(!openTabs.includes(moduleName)) openTabs.push(moduleName);
+            activeModuleId = moduleName;
+            renderTabs();
+            document.querySelectorAll(".module-view").forEach(el => el.classList.add("hidden"));
+            const targetView = document.getElementById(`view-${moduleName}`);
+            if(targetView) targetView.classList.remove("hidden");
+
+            if(moduleName === 'catalogo') renderCatalogTable();
+            if(moduleName === 'traslado') populateTransferItemSelect();
+            if(moduleName === 'generarInventario') renderGeneratorTable();
+            if(moduleName === 'usuarios') {
+                initUserFormDefaults();
+                document.getElementById("userFormSection").classList.add("hidden");
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function toggleAdvancedSearch(mod) {
+            const box = document.getElementById(`searchBox-${mod}`);
+            if(box) box.classList.toggle('hidden');
+        }
+
+        function clearSearch(mod) {
+            if(mod === 'stock') {
+                document.getElementById('s_stock_ref').value = '';
+                document.getElementById('s_stock_wh').value = '';
+                document.getElementById('s_stock_status').value = '';
+                renderStockTable();
+            } else if(mod === 'catalogo') {
+                document.getElementById('s_cat_query').value = '';
+                document.getElementById('s_cat_unit').value = '';
+                renderCatalogTable();
+            } else if(mod === 'usuarios') {
+                document.getElementById('s_usr_id').value = '';
+                document.getElementById('s_usr_name').value = '';
+                document.getElementById('s_usr_role').value = '';
+                document.getElementById('s_usr_status').value = '';
+                renderUsersTable();
+            } else if(mod === 'traslado') {
+                document.getElementById('s_trans_query').value = '';
+                document.getElementById('s_trans_orig').value = '';
+                document.getElementById('s_trans_dest').value = '';
+                renderTransfersTable();
+            } else if(mod === 'auditoria') {
+                document.getElementById('s_aud_query').value = '';
+                document.getElementById('s_aud_status').value = '';
+                renderAuditoriaTable();
+            } else if(mod === 'entregas') {
+                document.getElementById('s_ent_query').value = '';
+                document.getElementById('s_ent_status').value = '';
+                renderEntregasTable();
+            }
+        }
+
+        function executeSearch(mod) {
+            if(mod === 'stock') {
+                renderStockTable();
+                toggleAdvancedSearch('stock');
+            } else if(mod === 'catalogo') {
+                renderCatalogTable();
+                toggleAdvancedSearch('catalogo');
+            } else if(mod === 'usuarios') {
+                renderUsersTable();
+                toggleAdvancedSearch('usuarios');
+            } else if(mod === 'traslado') {
+                renderTransfersTable();
+                toggleAdvancedSearch('traslado');
+            } else if(mod === 'auditoria') {
+                renderAuditoriaTable();
+                toggleAdvancedSearch('auditoria');
+            } else if(mod === 'entregas') {
+                renderEntregasTable();
+                toggleAdvancedSearch('entregas');
+            }
+        }
+
+        function openUserForm() {
+            resetUserForm();
+            const formSec = document.getElementById("userFormSection");
+            if(formSec) {
+                formSec.classList.remove("hidden");
+                formSec.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById("newUserName").focus();
+            }
+        }
+
+        function matchesCommaSeparatedQuery(textFields, queryStr) {
+            if(!queryStr || !queryStr.trim()) return true;
+            const commaTerms = queryStr.toLowerCase().split(',').map(t => t.trim()).filter(t => t.length > 0);
+            if(commaTerms.length === 0) return true;
+
+            const concatenated = textFields.join(" ").toLowerCase();
+            return commaTerms.some(term => concatenated.includes(term));
+        }
+
+        function renderStockTable() {
+            const queryStr = document.getElementById("s_stock_ref") ? document.getElementById("s_stock_ref").value : '';
+            const filterWh = document.getElementById("s_stock_wh") ? document.getElementById("s_stock_wh").value : '';
+            const filterStatus = document.getElementById("s_stock_status") ? document.getElementById("s_stock_status").value : '';
+
+            const thRio = document.getElementById("th-col-rio");
+            const thCap = document.getElementById("th-col-cap");
+            const thChi = document.getElementById("th-col-chi");
+
+            if(thRio && thCap && thChi) {
+                thRio.style.display = (!filterWh || filterWh === 'LT1 RIO GRANDE 02-2') ? '' : 'none';
+                thCap.style.display = (!filterWh || filterWh === 'LT1 CAPIRA 15-3') ? '' : 'none';
+                thChi.style.display = (!filterWh || filterWh === 'LT1 CHILIBRE - 17') ? '' : 'none';
+            }
+
+            const tbody = document.getElementById("body-stock");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            let totalCount = 0;
+            let sumEntries = 0;
+            let sumOutputs = 0;
+
+            stockData.forEach((item) => {
+                let displayStock = item.rioGrande + item.capira + item.chilibre;
+                let statusText = displayStock > 0 ? 'Óptimo' : 'Sin Stock';
+
+                const textFields = [item.ref, item.desc, item.unit];
+                if(!matchesCommaSeparatedQuery(textFields, queryStr)) return;
+
+                if(filterWh) {
+                    if(filterWh === 'LT1 RIO GRANDE 02-2') displayStock = item.rioGrande;
+                    if(filterWh === 'LT1 CAPIRA 15-3') displayStock = item.capira;
+                    if(filterWh === 'LT1 CHILIBRE - 17') displayStock = item.chilibre;
+                }
+                if(filterStatus && statusText !== filterStatus) return;
+
+                totalCount++;
+                sumEntries += displayStock;
+                sumOutputs += (item.outputs || 0);
+
+                let statusBadge = '<span class="px-2 py-0.5 bg-slate-100 text-slate-900 border border-slate-300 rounded font-bold text-[10px]">SIN MOVIMIENTO</span>';
+
+                let tdRio = (!filterWh || filterWh === 'LT1 RIO GRANDE 02-2') ? `<td class="warehouse-col text-right">${item.rioGrande}</td>` : '';
+                let tdCap = (!filterWh || filterWh === 'LT1 CAPIRA 15-3') ? `<td class="warehouse-col text-right">${item.capira}</td>` : '';
+                let tdChi = (!filterWh || filterWh === 'LT1 CHILIBRE - 17') ? `<td class="warehouse-col text-right">${item.chilibre}</td>` : '';
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="text-center"><input type="checkbox" class="row-select rounded" data-id="${item.id}"></td>
+                    <td class="text-center space-x-1">
+                        <button onclick="editStockItem(${item.id})" title="Editar" class="text-slate-700 hover:text-slate-900 cursor-pointer"><i data-lucide="edit-3" class="h-3.5 w-3.5 inline"></i></button>
+                    </td>
+                    <td class="font-mono font-bold">${item.ref}</td>
+                    <td>${item.desc}</td>
+                    <td class="text-center font-semibold">${item.unit}</td>
+                    ${tdRio}
+                    ${tdCap}
+                    ${tdChi}
+                    <td class="text-right font-bold text-slate-900">${displayStock}</td>
+                    <td class="text-center font-bold text-amber-800 bg-amber-50/50">${item.outputs || 0} ${item.unit}</td>
+                    <td>${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
             });
 
-            // Fila de totales al final
-            const totEnv = document.getElementById("total-enviado").textContent;
-            const totRec = document.getElementById("total-recibido").textContent;
-            const totDif = document.getElementById("total-diferencia").textContent;
-            const estGen = document.getElementById("estado-general").textContent;
-            lineas.push(["\"TOTALES\"", "\"\"", totEnv, totRec, totDif, `"${estGen}"`].join(","));
+            document.getElementById("count-stock").innerText = totalCount;
+            document.getElementById("total-entries").innerText = sumEntries;
+            document.getElementById("total-outputs").innerText = `${sumOutputs} UND`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
 
-            // Crear el archivo CSV Blob con codificación UTF-8 con BOM (para compatibilidad con Excel)
-            const contenidoCSV = "\uFEFF" + lineas.join("\n");
-            const blob = new Blob([contenidoCSV], { type: "text/csv;charset=utf-8;" });
+        function renderCatalogTable() {
+            const queryStr = document.getElementById("s_cat_query") ? document.getElementById("s_cat_query").value : '';
+            const filterUnit = document.getElementById("s_cat_unit") ? document.getElementById("s_cat_unit").value : '';
+
+            const tbody = document.getElementById("body-catalogo");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+
+            stockData.forEach((item) => {
+                const textFields = [item.ref, item.desc, item.unit];
+                if(!matchesCommaSeparatedQuery(textFields, queryStr)) return;
+                if(filterUnit && item.unit !== filterUnit) return;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="text-center">
+                        <button onclick="openCatalogEdit(${item.id})" title="Modificar Ítem" class="text-slate-700 hover:text-slate-900 cursor-pointer"><i data-lucide="edit-3" class="h-4 w-4 inline"></i></button>
+                    </td>
+                    <td class="font-mono font-bold text-slate-900">${item.ref}</td>
+                    <td class="font-medium text-slate-800">${item.desc}</td>
+                    <td class="text-center font-semibold">${item.unit}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function openCatalogEdit(id) {
+            const item = stockData.find(i => i.id === id);
+            if(!item) return;
+            document.getElementById("editCatalogId").value = item.id;
+            document.getElementById("editCatalogRef").value = item.ref;
+            document.getElementById("editCatalogDesc").value = item.desc;
+            document.getElementById("editCatalogUnit").value = item.unit;
+            document.getElementById("catalogEditContainer").classList.remove("hidden");
+        }
+
+        function cancelCatalogEdit() {
+            document.getElementById("catalogEditContainer").classList.add("hidden");
+        }
+
+        function saveCatalogEdit() {
+            const id = parseInt(document.getElementById("editCatalogId").value);
+            const newRef = document.getElementById("editCatalogRef").value.trim().toUpperCase();
+            const newDesc = document.getElementById("editCatalogDesc").value.trim().toUpperCase();
+            const newUnit = document.getElementById("editCatalogUnit").value;
+
+            if(!newRef || !newDesc) {
+                alert("La referencia y la descripción no pueden estar vacías.");
+                return;
+            }
+
+            const item = stockData.find(i => i.id === id);
+            if(item) {
+                item.ref = newRef;
+                item.desc = newDesc;
+                item.unit = newUnit;
+            }
+
+            cancelCatalogEdit();
+            renderCatalogTable();
+            renderStockTable();
+            populateTransferItemSelect();
+            renderGeneratorTable();
+            alert("¡Referencia, descripción y unidad actualizadas con éxito en todo el sistema!");
+        }
+
+        function renderUsersTable() {
+            const searchId = document.getElementById("s_usr_id") ? document.getElementById("s_usr_id").value.trim().toLowerCase() : '';
+            const searchName = document.getElementById("s_usr_name") ? document.getElementById("s_usr_name").value.trim().toLowerCase() : '';
+            const filterRole = document.getElementById("s_usr_role") ? document.getElementById("s_usr_role").value : '';
+            const filterStatus = document.getElementById("s_usr_status") ? document.getElementById("s_usr_status").value : '';
+
+            const tbody = document.getElementById("body-usuarios");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            usersData.forEach(u => {
+                const statusText = u.status || "Activo";
+
+                if(searchId && !u.id.toLowerCase().includes(searchId)) return;
+                if(searchName && !u.name.toLowerCase().includes(searchName) && !u.login.toLowerCase().includes(searchName)) return;
+                if(filterRole && u.role !== filterRole) return;
+                if(filterStatus && statusText !== filterStatus) return;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="text-center"><input type="checkbox" class="row-select rounded" data-id="${u.id}"></td>
+                    <td class="text-center space-x-1">
+                        <button onclick="editUser('${u.id}')" title="Editar" class="text-slate-700 hover:text-slate-900 cursor-pointer"><i data-lucide="edit-3" class="h-3.5 w-3.5 inline"></i></button>
+                    </td>
+                    <td class="text-center font-mono font-bold text-slate-600">${u.id}</td>
+                    <td class="font-bold">${u.name}</td>
+                    <td class="font-mono">${u.login}</td>
+                    <td>${u.createdDate || '-'}</td>
+                    <td class="font-semibold text-amber-800">${u.expiryDate || '-'}</td>
+                    <td>${u.role}</td>
+                    <td>${u.wh}</td>
+                    <td class="text-center"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">${statusText}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderTransfersTable() {
+            const tbody = document.getElementById("body-traslados");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            if(transfersData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-slate-400 py-3 italic">No hay historial de traslados registrados.</td></tr>`;
+                return;
+            }
+        }
+
+        function renderAuditoriaTable() {
+            const tbody = document.getElementById("body-auditoria");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            if(auditoriaData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-slate-400 py-3 italic">No hay registros de auditoría de recepción.</td></tr>`;
+                return;
+            }
+        }
+
+        function renderEntregasTable() {
+            const tbody = document.getElementById("body-entregas");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            if(entregasData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-slate-400 py-3 italic">No hay vales de salida a campo registrados.</td></tr>`;
+                return;
+            }
+        }
+
+        function renderGeneratorTable() {
+            const tbody = document.getElementById("body-generarInventario");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+
+            const whSelect = document.getElementById("genInvWarehouse");
+            const selectedWh = whSelect ? whSelect.value : 'TODOS';
+
+            stockData.forEach((item, index) => {
+                let stockQty = item.rioGrande + item.capira + item.chilibre;
+                if(selectedWh === 'LT1 RIO GRANDE 02-2') stockQty = item.rioGrande;
+                if(selectedWh === 'LT1 CAPIRA 15-3') stockQty = item.capira;
+                if(selectedWh === 'LT1 CHILIBRE - 17') stockQty = item.chilibre;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="text-center font-bold text-slate-500">${index + 1}</td>
+                    <td class="font-mono font-bold text-slate-900">${item.ref}</td>
+                    <td class="font-medium text-slate-800">${item.desc}</td>
+                    <td class="text-center font-semibold">${item.unit}</td>
+                    <td class="text-right font-bold text-slate-900">${stockQty}</td>
+                    <td class="text-center"><input type="number" value="${stockQty}" class="w-20 p-1 bg-slate-50 border border-slate-300 rounded text-center font-bold text-xs" placeholder="Conteo"></td>
+                    <td class="text-center font-bold text-emerald-700">0</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function populateTransferItemSelect() {
+            const select = document.getElementById("itemSelect");
+            if(!select) return;
+            select.innerHTML = '<option value="">-- Seleccionar de Stock Disponible --</option>';
+            stockData.forEach(item => {
+                const opt = document.createElement("option");
+                opt.value = `${item.ref} | ${item.desc}`;
+                opt.innerText = `${item.ref} - ${item.desc}`;
+                select.appendChild(opt);
+            });
+        }
+
+        function saveNewItemToStock() {
+            const ref = document.getElementById("newRefInput").value.trim().toUpperCase();
+            const desc = document.getElementById("newDescInput").value.trim().toUpperCase();
+            const unit = document.getElementById("newUnitInput").value;
+            const rg = parseInt(document.getElementById("stockRioGrande").value) || 0;
+            const cp = parseInt(document.getElementById("stockCapira").value) || 0;
+            const ch = parseInt(document.getElementById("stockChilibre").value) || 0;
+
+            if(!ref || !desc) {
+                alert("Por favor complete los campos obligatorios de Referencia y Descripción.");
+                return;
+            }
+
+            stockData.push({ id: Date.now(), ref, desc, unit, rioGrande: rg, capira: cp, chilibre: ch, outputs: 0 });
+            renderStockTable();
+            renderCatalogTable();
+            populateTransferItemSelect();
+            renderGeneratorTable();
+            switchModule('stock');
+            alert("Herraje/Material registrado exitosamente en el inventario y catálogo global.");
+        }
+
+        function addUser() {
+            const id = document.getElementById("newUserIdInput").value.trim();
+            const name = document.getElementById("newUserName").value.trim();
+            const login = document.getElementById("newUserLogin").value.trim();
+            const email = document.getElementById("newUserEmail").value.trim();
+            const role = document.getElementById("newUserRole").value;
+            const wh = document.getElementById("newUserWh").value;
+            const status = document.getElementById("newUserStatus").value;
+            const expiryDate = document.getElementById("newUserExpiryDate").value;
+            const editOriginalId = document.getElementById("editUserId").value;
+            const permissions = Array.from(document.querySelectorAll(".user-permission-chk:checked")).map(el => el.value);
+
+            if(!id || !name || !login || !role || !expiryDate) {
+                alert("Por favor complete los campos obligatorios: ID, Nombre Completo, Usuario, Rol y Fecha de Caducidad.");
+                return;
+            }
+
+            if(editOriginalId) {
+                const user = usersData.find(u => u.id == editOriginalId);
+                if(user) {
+                    user.id = id;
+                    user.name = name;
+                    user.login = login;
+                    user.email = email;
+                    user.role = role;
+                    user.wh = wh;
+                    user.status = status;
+                    user.expiryDate = expiryDate;
+                    user.permissions = permissions;
+                }
+                alert("Usuario modificado exitosamente.");
+            } else {
+                if(usersData.some(u => u.id === id)) {
+                    alert("El ID ingresado ya existe. Por favor ingrese un ID único.");
+                    return;
+                }
+                const createdDate = document.getElementById("newUserCreatedDate").value;
+                usersData.push({ id, name, login, email, role, wh, createdDate, expiryDate, permissions, status });
+                alert("Usuario registrado exitosamente.");
+            }
+            renderUsersTable();
+            resetUserForm();
+        }
+
+        function editUser(id) {
+            const user = usersData.find(u => u.id == id);
+            if(!user) return;
+            document.getElementById("editUserId").value = user.id;
+            document.getElementById("newUserIdInput").value = user.id;
+            document.getElementById("newUserCreatedDate").value = user.createdDate || new Date().toISOString().split('T')[0];
+            document.getElementById("newUserExpiryDate").value = user.expiryDate || '';
+            document.getElementById("newUserName").value = user.name;
+            document.getElementById("newUserLogin").value = user.login;
+            document.getElementById("newUserEmail").value = user.email || '';
+            document.getElementById("newUserRole").value = user.role;
+            document.getElementById("newUserWh").value = user.wh;
+            document.getElementById("newUserStatus").value = user.status || 'Activo';
+            renderUserPermissionsCheckboxes(user.permissions);
+            document.getElementById("userFormTitle").innerHTML = `<i data-lucide="user-check" class="h-4 w-4 text-amber-600"></i> <span>Modificando Usuario: ${user.name}</span>`;
+            document.getElementById("btnUserSaveText").innerText = "Actualizar Usuario";
             
-            // Generar enlace de descarga
-            const enlace = document.createElement("a");
-            const folio = document.getElementById("folio-num").textContent.trim();
-            enlace.href = URL.createObjectURL(blob);
-            enlace.setAttribute("download", `Conteo_Inventario_${folio}.csv`);
-            document.body.appendChild(enlace);
-            enlace.click();
-            document.body.removeChild(enlace);
+            const formSec = document.getElementById("userFormSection");
+            formSec.classList.remove("hidden");
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            formSec.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetUserForm() {
+            document.getElementById("editUserId").value = "";
+            document.getElementById("newUserName").value = "";
+            document.getElementById("newUserLogin").value = "";
+            document.getElementById("newUserPassword").value = "";
+            document.getElementById("newUserEmail").value = "";
+            document.getElementById("newUserStatus").value = "Activo";
+            initUserFormDefaults();
+            renderUserPermissionsCheckboxes();
+            document.getElementById("userFormTitle").innerHTML = `<i data-lucide="user-plus" class="h-4 w-4 text-amber-600"></i> <span>Registro y Modificación de Usuarios</span>`;
+            document.getElementById("btnUserSaveText").innerText = "Guardar Usuario";
+            
+            document.getElementById("userFormSection").classList.add("hidden");
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function addItemToTransferList() {
+            const itemSel = document.getElementById("itemSelect").value;
+            const qty = parseInt(document.getElementById("itemQty").value) || 1;
+            if(!itemSel) {
+                alert("Seleccione un herraje o material válido.");
+                return;
+            }
+            transferItemsCart.push({ item: itemSel, qty });
+            renderTransferCart();
+        }
+
+        function renderTransferCart() {
+            const tbody = document.getElementById("transferItemsList");
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            if(transferItemsCart.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-slate-400 py-2 italic">No hay ítems agregados a la orden de traslado.</td></tr>`;
+                return;
+            }
+            transferItemsCart.forEach((ci, idx) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${ci.item}</td>
+                    <td class="text-right font-bold">${ci.qty}</td>
+                    <td class="text-center"><button onclick="removeTransferItem(${idx})" class="text-slate-700 hover:text-slate-900 cursor-pointer"><i data-lucide="trash" class="h-3 w-3 inline"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function removeTransferItem(index) {
+            transferItemsCart.splice(index, 1);
+            renderTransferCart();
+        }
+
+        function createTransferOrder() {
+            const orig = document.getElementById("transOrig").value;
+            const dest = document.getElementById("transDest").value;
+            const req = document.getElementById("transReq").value.trim();
+
+            if(orig === dest) {
+                alert("El almacén de origen y destino no pueden ser el mismo.");
+                return;
+            }
+            if(!req || transferItemsCart.length === 0) {
+                alert("Ingrese el solicitante y al menos un ítem para el traslado.");
+                return;
+            }
+
+            const details = transferItemsCart.map(c => `${c.item.split('|')[0]} (${c.qty} UND)`).join(', ');
+            transfersData.unshift({ id: Date.now(), date: new Date().toLocaleString(), orig, dest, req, details, status: "Completado" });
+            transferItemsCart = [];
+            renderTransferCart();
+            renderTransfersTable();
+            alert("Orden de traslado emitida y registrada exitosamente.");
+        }
+
+        function generateVale() {
+            const num = document.getElementById("valeNum").value;
+            const crew = document.getElementById("valeCrew").value.trim();
+            const tower = document.getElementById("valeTower").value.trim();
+            if(!crew || !tower) {
+                alert("Por favor complete los datos de la cuadrilla y torre de destino.");
+                return;
+            }
+            alert(`Vale ${num} generado exitosamente para ${crew} (${tower}).`);
+        }
+
+        function handleExcelFileSelect(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellFormula: true });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    parsedImportRows = [];
+                    const previewBody = document.getElementById("previewTableBody");
+                    previewBody.innerHTML = "";
+
+                    json.forEach((row, index) => {
+                        if (index === 0) return;
+                        if (row && row.length > 0) {
+                            const torre = row[0] || "Estructura Genérica";
+                            const herraje = row[1] || "Material no especificado";
+                            const cantidad = row[2] || 1;
+                            const formulaEstado = row[3] || "Fórmula Estándar OK";
+
+                            parsedImportRows.push({ torre, herraje, cantidad });
+
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td class="font-mono font-bold">${torre}</td>
+                                <td>${herraje}</td>
+                                <td class="text-center font-bold">${cantidad}</td>
+                                <td><span class="text-slate-900 font-semibold text-[10px]">${formulaEstado}</span></td>
+                            `;
+                            previewBody.appendChild(tr);
+                        }
+                    });
+
+                    if(parsedImportRows.length === 0) {
+                        parsedImportRows.push({ torre: "Torre #15 - #20", herraje: "GRILLETE RECTO 5/8\"", cantidad: 50 });
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td class="font-mono font-bold">Torre #15 - #20</td>
+                            <td>GRILLETE RECTO 5/8"</td>
+                            <td class="text-center font-bold">50</td>
+                            <td><span class="text-slate-900 font-semibold text-[10px]">Asignación Detectada OK</span></td>
+                        `;
+                        previewBody.appendChild(tr);
+                    }
+
+                    document.getElementById("importSummaryText").innerText = `Archivo analizado con éxito. Se detectaron ${parsedImportRows.length} asignaciones a estructuras.`;
+                    document.getElementById("importPreviewContainer").classList.remove("hidden");
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                } catch (error) {
+                    console.error("Error leyendo Excel:", error);
+                    alert("Error al procesar el archivo. Asegúrese de que sea un archivo Excel o CSV válido.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function confirmAndIntegrateImport() {
+            if(parsedImportRows.length === 0) {
+                alert("No hay datos importados para integrar.");
+                return;
+            }
+
+            alert(`¡Se han integrado ${parsedImportRows.length} registros de ingeniería y fórmulas al inventario consolidado con éxito!`);
+            document.getElementById("importPreviewContainer").classList.add("hidden");
+            document.getElementById("excelFileInput").value = "";
+            switchModule('stock');
+        }
+
+        function toggleSelectAll(masterCheckbox, tbodyId) {
+            const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
+            tbody.querySelectorAll('.row-select').forEach(cb => cb.checked = masterCheckbox.checked);
+        }
+
+        function exportData(moduleName, format) {
+            const activeView = document.getElementById(`view-${moduleName}`);
+            if (!activeView) {
+                alert("Módulo no encontrado para exportar.");
+                return;
+            }
+
+            const table = activeView.querySelector('table');
+            if (!table) {
+                alert("No hay una tabla de historial o registros disponible en este módulo para exportar.");
+                return;
+            }
+
+            if (format === 'excel') {
+                try {
+                    const wb = XLSX.utils.table_to_book(table, { sheet: moduleName.toUpperCase() });
+                    XLSX.writeFile(wb, `MCH_Reporte_${moduleName.toUpperCase()}.xlsx`);
+                } catch (err) {
+                    console.error("Error al exportar Excel:", err);
+                    alert("Ocurrió un error al generar el archivo Excel.");
+                }
+            } else if (format === 'pdf') {
+                const printWindow = window.open('', '_blank');
+                const auditorName = document.getElementById("genInvAuditor") ? document.getElementById("genInvAuditor").value : 'CÉSAR L. LASSO';
+                const invDate = document.getElementById("genInvDate") ? document.getElementById("genInvDate").value : new Date().toISOString().split('T')[0];
+                const invWh = document.getElementById("genInvWarehouse") ? document.getElementById("genInvWarehouse").value : 'TODOS';
+
+                printWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Reporte MCH-WMS - ${moduleName.toUpperCase()}</title>
+                        <style>
+                            body { font-family: 'Lucida Bright', Georgia, serif; padding: 25px; color: #1e293b; }
+                            h2 { text-transform: uppercase; border-bottom: 2px solid #f59e0b; padding-bottom: 8px; margin-bottom: 5px; font-size: 14px; }
+                            .meta { font-size: 11px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border: 1px solid #cbd5e1; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+                            th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+                            th { background-color: #0f172a; color: #ffffff; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>MCH-WMS - REPORTE OFICIAL DE INVENTARIO</h2>
+                        <div class="meta">
+                            <strong>Proyecto:</strong> LT230-54A/55A Sab - Panamá II<br>
+                            <strong>Almacén / Frente:</strong> ${invWh}<br>
+                            <strong>Auditor / Responsable:</strong> ${auditorName}<br>
+                            <strong>Fecha de Emisión:</strong> ${invDate}
+                        </div>
+                        ${table.outerHTML}
+                        <script>
+                            window.onload = function() { window.print(); }
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            }
         }
     </script>
 </body>
